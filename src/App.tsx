@@ -30,6 +30,7 @@ import { ColdOutreachEngine } from "./components/ColdOutreachEngine";
 import SectionWipe from "./components/SectionWipe";
 import VsComparison from "./components/VsComparison";
 import AiShieldHumanizer from "./components/AiShieldHumanizer";
+import WorkspaceConsole from "./components/WorkspaceConsole";
 
 // Floating Ghost Card email typewriter
 function GhostCardDraft({ subject }: { subject: string }) {
@@ -224,6 +225,7 @@ export default function App() {
   
   // Early Access / Activation Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isConsoleOpen, setIsConsoleOpen] = useState(false);
   const [modalStep, setModalStep] = useState<"input" | "loading" | "success">("input");
   const [emailInput, setEmailInput] = useState("");
   const [textSample, setTextSample] = useState("");
@@ -410,6 +412,13 @@ export default function App() {
                 </a>
               );
             })}
+            <button
+              onClick={() => setIsConsoleOpen(true)}
+              className="relative group text-sm text-[#FF9900] hover:text-[#FFB84D] transition-colors duration-300 font-semibold py-1 flex items-center space-x-1 cursor-pointer"
+            >
+              <span className="w-1.5 h-1.5 bg-[#FF9900] rounded-full animate-pulse" />
+              <span>WS Console</span>
+            </button>
             <a
               href="/students/index.html"
               className="relative group text-sm text-[#A78BFA] hover:text-[#7C3AED] transition-colors duration-300 font-semibold py-1"
@@ -461,6 +470,16 @@ export default function App() {
             >
               For Students 🎓
             </a>
+            <button
+              onClick={() => {
+                setIsMobileMenuOpen(false);
+                setIsConsoleOpen(true);
+              }}
+              className="text-base text-[#FF9900] hover:text-[#FFB84D] font-semibold text-left flex items-center space-x-1.5 cursor-pointer"
+            >
+              <span className="w-1.5 h-1.5 bg-[#FF9900] rounded-full animate-pulse" />
+              <span>WS Console</span>
+            </button>
             <button
               onClick={() => {
                 setIsMobileMenuOpen(false);
@@ -1001,6 +1020,13 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* DATABASE CONSOLE SIMULATOR */}
+      <WorkspaceConsole 
+        isOpen={isConsoleOpen} 
+        onClose={() => setIsConsoleOpen(false)} 
+        onActivateTwin={handleOpenModal} 
+      />
 
     </div>
   );
