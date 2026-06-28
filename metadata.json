@@ -1,0 +1,6 @@
+{
+  "name": "AI Digital Twin",
+  "description": "An AI that learns your unique work style and autonomously drafts emails, plans, and documents exactly like you.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

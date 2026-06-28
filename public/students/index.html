@@ -1,0 +1,4326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Digital Twin | Students</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    /* VARIABLES & THEME */
+    :root {
+      --void: #050810;
+      --deep-navy: #0A0F1E;
+      --volt-purple: #7C3AED;
+      --volt-light: #A78BFA;
+      --arc-cyan: #00E5FF;
+      --ghost-white: #E8EEFF;
+      --dim-silver: #7A85A3;
+      --glass-edge: rgba(124, 58, 237, 0.12);
+      --font-sans: 'Inter', sans-serif;
+      --font-display: 'Space Grotesk', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    /* GLOBAL RESET */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      scrollbar-width: thin;
+      scrollbar-color: var(--volt-purple) var(--void);
+    }
+    body {
+      background-color: var(--void);
+      color: var(--ghost-white);
+      font-family: var(--font-sans);
+      overflow-x: hidden;
+      line-height: 1.5;
+    }
+
+    /* SCROLL PROGRESS BAR */
+    #scroll-progress {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--volt-purple), var(--arc-cyan));
+      width: 0%;
+      z-index: 1000;
+      transition: width 0.1s ease-out;
+    }
+
+    /* CANVAS & WORD FRAGMENTS BACKGROUND */
+    #bg-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -2;
+      pointer-events: none;
+    }
+    #words-layer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .word-fragment {
+      position: absolute;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: rgba(124, 90, 250, 0.18);
+      white-space: nowrap;
+      user-select: none;
+      will-change: transform;
+    }
+
+    /* AURORA GRADIENTS */
+    .aurora-tr {
+      position: fixed;
+      top: -10%;
+      right: -10%;
+      width: 60%;
+      height: 60%;
+      background: radial-gradient(circle, rgba(124, 58, 237, 0.06) 0%, transparent 70%);
+      z-index: -3;
+      pointer-events: none;
+    }
+    .aurora-bl {
+      position: fixed;
+      bottom: -10%;
+      left: -10%;
+      width: 60%;
+      height: 60%;
+      background: radial-gradient(circle, rgba(0, 229, 255, 0.04) 0%, transparent 70%);
+      z-index: -3;
+      pointer-events: none;
+    }
+
+    /* SECTION 0 — LAUNCH COUNTDOWN BANNER */
+    .countdown-banner {
+      position: sticky;
+      top: 0;
+      height: 44px;
+      width: 100%;
+      background: rgba(124, 58, 237, 0.15);
+      border-bottom: 1px solid rgba(124, 58, 237, 0.25);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      z-index: 500;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+    }
+    .banner-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .pulse-dot {
+      width: 6px;
+      height: 6px;
+      background-color: var(--volt-purple);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--volt-light);
+      animation: banner-pulse 1.8s infinite ease-in-out;
+    }
+    .banner-left span {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--volt-light);
+      font-weight: 500;
+      letter-spacing: 0.1em;
+    }
+    .banner-center {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--dim-silver);
+    }
+    .timer-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      margin: 0 4px;
+    }
+    .timer-num {
+      font-family: var(--font-display);
+      font-size: 15px;
+      color: var(--ghost-white);
+      font-weight: 600;
+    }
+    .timer-lbl {
+      font-family: var(--font-mono);
+      font-size: 8px;
+      color: var(--dim-silver);
+      text-transform: uppercase;
+      margin-left: 1px;
+    }
+    .banner-right {
+      font-family: var(--font-sans);
+      font-size: 12px;
+      color: var(--volt-light);
+      font-weight: 500;
+    }
+
+    /* CONTAINER UTILITIES */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+    .glass {
+      background: rgba(10, 15, 30, 0.7);
+      border: 1px solid var(--glass-edge);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: 16px;
+    }
+
+    /* SECTION 1 — HERO */
+    .hero-sec {
+      min-height: calc(100vh - 44px);
+      display: flex;
+      align-items: center;
+      padding: 60px 0;
+      position: relative;
+    }
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 48px;
+      align-items: center;
+      width: 100%;
+    }
+    .hero-left {
+      display: flex;
+      flex-col: column;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .badge-pill {
+      background: rgba(124, 58, 237, 0.15);
+      border: 1px solid rgba(124, 58, 237, 0.4);
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--volt-light);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-weight: 500;
+      margin-bottom: 20px;
+    }
+    .hero-title {
+      font-family: var(--font-display);
+      font-size: 58px;
+      line-height: 1.05;
+      color: var(--ghost-white);
+      font-weight: 700;
+      margin-bottom: 20px;
+    }
+    .strike-container {
+      position: relative;
+      display: inline-block;
+    }
+    .strike-line {
+      position: absolute;
+      left: 0;
+      top: 52%;
+      width: 0;
+      height: 4px;
+      background-color: var(--volt-purple);
+      border-radius: 2px;
+      box-shadow: 0 0 10px var(--volt-light);
+      transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .hero-sub {
+      font-family: var(--font-sans);
+      font-size: 17px;
+      color: var(--dim-silver);
+      line-height: 1.7;
+      max-width: 480px;
+      margin-bottom: 12px;
+    }
+    .social-proof-micro {
+      font-size: 13px;
+      color: var(--dim-silver);
+      margin-bottom: 28px;
+    }
+    .social-proof-micro span {
+      color: var(--volt-light);
+      font-weight: bold;
+    }
+
+    /* EMAIL CAPTURE FORM */
+    .email-form-container {
+      width: 100%;
+      max-width: 520px;
+      margin-bottom: 16px;
+    }
+    .email-form {
+      display: flex;
+      gap: 8px;
+      width: 100%;
+    }
+    .email-input {
+      flex: 1;
+      height: 52px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(124, 58, 237, 0.3);
+      color: var(--ghost-white);
+      font-family: var(--font-sans);
+      font-size: 14px;
+      padding: 0 18px;
+      outline: none;
+      transition: all 0.25s ease;
+    }
+    .email-input:focus {
+      border-color: var(--volt-purple);
+      box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
+      background: rgba(255, 255, 255, 0.07);
+    }
+    .submit-btn {
+      height: 52px;
+      padding: 0 24px;
+      background-color: var(--volt-purple);
+      border: none;
+      border-radius: 10px;
+      color: #ffffff;
+      font-family: var(--font-display);
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      white-space: nowrap;
+    }
+    .submit-btn:hover {
+      background-color: #6D28D9;
+      box-shadow: 0 0 24px 8px rgba(124, 58, 237, 0.4);
+    }
+    .submit-btn:active {
+      transform: scale(0.97);
+    }
+    .form-success {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 12px 18px;
+      border-radius: 10px;
+      background: rgba(0, 229, 255, 0.08);
+      border: 1px solid rgba(0, 229, 255, 0.2);
+      animation: checkmark-spring 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .success-headline {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--font-display);
+      font-size: 16px;
+      color: var(--ghost-white);
+      font-weight: 600;
+    }
+    .success-headline svg {
+      color: var(--arc-cyan);
+      flex-shrink: 0;
+    }
+    .success-sub {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      font-family: var(--font-sans);
+      font-size: 13px;
+      color: var(--dim-silver);
+    }
+    .queue-num {
+      font-family: var(--font-mono);
+      color: var(--arc-cyan);
+      font-weight: bold;
+    }
+    .copy-btn {
+      background: rgba(124, 58, 237, 0.15);
+      border: 1px solid rgba(124, 58, 237, 0.3);
+      padding: 4px 10px;
+      border-radius: 6px;
+      color: var(--volt-light);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .copy-btn:hover {
+      background: rgba(124, 58, 237, 0.3);
+      color: #fff;
+    }
+    .error-msg {
+      font-size: 12px;
+      color: rgba(239, 68, 68, 0.85);
+      margin-top: 6px;
+      font-family: var(--font-sans);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .shake {
+      animation: shake 0.3s ease-in-out;
+    }
+    .trust-badges {
+      display: flex;
+      gap: 16px;
+      font-size: 12px;
+      color: var(--dim-silver);
+    }
+    .trust-badges span {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* RIGHT COLUMN — ESSAY TWIN DEMO CARD */
+    .hero-right {
+      display: flex;
+      justify-content: center;
+      perspective: 1000px;
+    }
+    .demo-card {
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 0 60px rgba(124, 58, 237, 0.1);
+      padding: 20px;
+      animation: demo-float 4s ease-in-out infinite;
+      will-change: transform;
+    }
+    .tab-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .dot-group {
+      display: flex;
+      gap: 6px;
+    }
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+    .dot-r { background: #FF5F56; }
+    .dot-y { background: #FFBD2E; }
+    .dot-g { background: #27C93F; }
+    .tab-title {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--dim-silver);
+    }
+    .card-divider {
+      height: 1px;
+      background: rgba(255, 255, 255, 0.06);
+      margin: 12px 0;
+    }
+    .panel {
+      padding: 12px;
+      border-radius: 8px;
+    }
+    .panel-a {
+      background: rgba(239, 68, 68, 0.03);
+      border: 1px dashed rgba(239, 68, 68, 0.15);
+    }
+    .lbl-generic {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: rgba(239, 68, 68, 0.85);
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+    .text-dimmed {
+      font-size: 12px;
+      color: rgba(232, 238, 255, 0.35);
+      line-height: 1.6;
+    }
+    .rewrite-middle {
+      text-align: center;
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--volt-light);
+      letter-spacing: 0.1em;
+      margin: 14px 0;
+    }
+    .panel-b {
+      background: rgba(124, 58, 237, 0.05);
+      border: 1px solid rgba(124, 58, 237, 0.2);
+      box-shadow: inset 0 0 15px rgba(124, 58, 237, 0.08);
+    }
+    .lbl-twin {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--arc-cyan);
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+    .text-bright {
+      font-size: 12px;
+      color: var(--ghost-white);
+      line-height: 1.6;
+    }
+    .card-footer-info {
+      margin-top: 14px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--volt-light);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .progress-track {
+      width: 100%;
+      height: 2px;
+      background: rgba(124, 58, 237, 0.15);
+      border-radius: 1px;
+      overflow: hidden;
+    }
+    .progress-bar {
+      width: 100%;
+      height: 100%;
+      background: var(--volt-purple);
+      box-shadow: 0 0 6px var(--volt-light);
+    }
+
+    /* SECTION 2 — THE REAL PROBLEM */
+    .problem-sec {
+      background: rgba(10, 15, 30, 0.5);
+      padding: 90px 0;
+      border-y: 1px solid rgba(124, 58, 237, 0.08);
+      text-align: center;
+    }
+    .eyebrow-large {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--volt-light);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .sec-title-large {
+      font-family: var(--font-display);
+      font-size: 42px;
+      line-height: 1.15;
+      color: var(--ghost-white);
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+    .problem-body {
+      font-family: var(--font-sans);
+      font-size: 17px;
+      color: var(--dim-silver);
+      line-height: 1.8;
+      max-width: 640px;
+      margin: 0 auto 48px auto;
+    }
+    .stat-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+    .stat-card {
+      background: rgba(124, 58, 237, 0.08);
+      border: 1px solid rgba(124, 58, 237, 0.2);
+      border-radius: 12px;
+      padding: 24px;
+      text-align: left;
+      transition: all 0.3s;
+    }
+    .stat-card:hover {
+      border-color: rgba(124, 58, 237, 0.4);
+      transform: translateY(-2px);
+    }
+    .stat-num {
+      font-family: var(--font-display);
+      font-size: 44px;
+      color: var(--volt-light);
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+    .stat-lbl {
+      font-size: 13px;
+      color: var(--dim-silver);
+      line-height: 1.5;
+    }
+
+    /* SECTION 3 — HOW IT WORKS */
+    .how-sec {
+      padding: 90px 0;
+    }
+    .sec-title-center {
+      text-align: center;
+      font-family: var(--font-display);
+      font-size: 38px;
+      font-weight: 700;
+      margin-bottom: 48px;
+    }
+    .step-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+    .step-card {
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      transition: all 0.3s;
+    }
+    .step-card:hover {
+      border-color: rgba(124, 58, 237, 0.35);
+      box-shadow: 0 0 30px rgba(124, 58, 237, 0.05);
+    }
+    .icon-wrapper {
+      margin-bottom: 20px;
+      width: 44px;
+      height: 44px;
+      border-radius: 8px;
+      background: rgba(5, 8, 16, 0.5);
+      border: 1px solid rgba(124, 58, 237, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .step-card h3 {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+    .step-card p {
+      font-size: 13.5px;
+      color: var(--dim-silver);
+      line-height: 1.6;
+      margin-bottom: 24px;
+      flex: 1;
+    }
+    .step-tag {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--volt-light);
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      padding-top: 14px;
+    }
+
+    /* SECTION 4 — STUDENT USE CASES */
+    .use-sec {
+      padding: 90px 0;
+      background: rgba(5, 8, 16, 0.3);
+    }
+    .tabs-nav {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      padding-bottom: 2px;
+      margin-bottom: 40px;
+    }
+    .tab-trigger {
+      background: none;
+      border: none;
+      padding: 12px 24px;
+      font-family: var(--font-display);
+      font-size: 15px;
+      color: var(--dim-silver);
+      cursor: pointer;
+      position: relative;
+      transition: color 0.2s;
+    }
+    .tab-trigger:hover {
+      color: var(--ghost-white);
+    }
+    .tab-trigger.active {
+      color: #ffffff;
+      font-weight: 600;
+    }
+    .tab-trigger.active::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background-color: var(--volt-purple);
+      box-shadow: 0 0 8px var(--volt-light);
+    }
+    .use-content-container {
+      position: relative;
+      min-height: 280px;
+    }
+    .tab-panel {
+      position: absolute;
+      width: 100%;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+    }
+    .tab-panel.active {
+      position: relative;
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .case-box {
+      padding: 24px;
+      border-radius: 12px;
+      background: rgba(10, 15, 30, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+    }
+    .case-title {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .brief-txt {
+      font-size: 14px;
+      color: var(--ghost-white);
+      line-height: 1.6;
+    }
+    .twin-txt {
+      font-family: var(--font-sans);
+      font-size: 13.5px;
+      color: var(--ghost-white);
+      line-height: 1.6;
+      white-space: pre-line;
+    }
+
+    /* SECTION 5 — SOCIAL PROOF WALL */
+    .quotes-sec {
+      padding: 90px 0;
+      overflow: hidden;
+    }
+    .marquee-container {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      margin-top: 48px;
+    }
+    .marquee-row {
+      display: flex;
+      width: max-content;
+      gap: 20px;
+    }
+    .scroll-left {
+      animation: marquee-left 30s linear infinite;
+    }
+    .scroll-right {
+      animation: marquee-right 30s linear infinite;
+    }
+    .marquee-container:hover .scroll-left,
+    .marquee-container:hover .scroll-right {
+      animation-play-state: paused;
+    }
+    .quote-card {
+      width: 280px;
+      flex-shrink: 0;
+      background: rgba(10, 15, 30, 0.8);
+      border: 1px solid rgba(124, 58, 237, 0.15);
+      border-radius: 12px;
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: border-color 0.2s;
+    }
+    .quote-card:hover {
+      border-color: rgba(124, 58, 237, 0.4);
+    }
+    .quote-text {
+      font-size: 13px;
+      color: rgba(232, 238, 255, 0.8);
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+    .author-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--volt-purple);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: #ffffff;
+      font-weight: bold;
+    }
+    .author-meta {
+      display: flex;
+      flex-direction: column;
+    }
+    .author-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--ghost-white);
+    }
+    .author-uni {
+      font-size: 11px;
+      color: var(--dim-silver);
+    }
+
+    /* SECTION 6 — PRICING */
+    .price-sec {
+      padding: 90px 0;
+      background: rgba(10, 15, 30, 0.2);
+    }
+    .price-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-top: 48px;
+    }
+    .price-card {
+      padding: 32px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    .price-featured {
+      border: 2px solid var(--volt-purple);
+      box-shadow: 0 0 30px rgba(124, 58, 237, 0.15);
+    }
+    .price-badge {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      font-family: var(--font-mono);
+      font-size: 9px;
+      background: rgba(124, 58, 237, 0.2);
+      border: 1px solid var(--volt-purple);
+      color: var(--volt-light);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-weight: bold;
+      letter-spacing: 0.05em;
+    }
+    .price-badge.popular {
+      background: var(--volt-purple);
+      color: #ffffff;
+    }
+    .price-card h3 {
+      font-family: var(--font-display);
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+    .price-amt-row {
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+      margin-bottom: 4px;
+    }
+    .price-large {
+      font-family: var(--font-display);
+      font-size: 40px;
+      font-weight: 700;
+      color: var(--ghost-white);
+    }
+    .price-crossed {
+      font-size: 16px;
+      text-decoration: line-through;
+      color: var(--dim-silver);
+      margin-right: 4px;
+    }
+    .price-unit {
+      font-size: 13px;
+      color: var(--dim-silver);
+    }
+    .price-billed {
+      font-size: 11px;
+      color: var(--dim-silver);
+      margin-bottom: 24px;
+    }
+    .features-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 32px;
+      flex: 1;
+    }
+    .feature-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--dim-silver);
+    }
+    .feature-item svg {
+      color: var(--arc-cyan);
+      flex-shrink: 0;
+      margin-top: 3px;
+    }
+    .price-btn {
+      width: 100%;
+      height: 48px;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.25s;
+      text-decoration: none;
+    }
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid rgba(124, 58, 237, 0.4);
+      color: var(--volt-light);
+    }
+    .btn-ghost:hover {
+      background: rgba(124, 58, 237, 0.1);
+      border-color: var(--volt-purple);
+    }
+    .btn-solid {
+      background: var(--volt-purple);
+      border: none;
+      color: #ffffff;
+    }
+    .btn-solid:hover {
+      background: #6D28D9;
+      box-shadow: 0 0 20px rgba(124, 58, 237, 0.35);
+    }
+    .price-note {
+      font-size: 11px;
+      color: var(--dim-silver);
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    /* SECTION 7 — FAQ */
+    .faq-sec {
+      padding: 90px 0;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .faq-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-top: 40px;
+    }
+    .faq-item {
+      background: rgba(10, 15, 30, 0.4);
+      border: 1px solid var(--glass-edge);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: border-color 0.25s;
+    }
+    .faq-trigger {
+      width: 100%;
+      background: none;
+      border: none;
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      text-align: left;
+      outline: none;
+    }
+    .faq-trigger h4 {
+      font-family: var(--font-display);
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--ghost-white);
+      transition: color 0.2s;
+    }
+    .faq-trigger svg {
+      color: var(--dim-silver);
+      transition: transform 0.25s;
+    }
+    .faq-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.35s ease;
+    }
+    .faq-inner {
+      padding: 0 24px 20px 24px;
+      font-size: 14px;
+      color: var(--dim-silver);
+      line-height: 1.6;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    /* Active FAQ styles applied dynamically via JS */
+    .faq-item.active {
+      border-left: 3px solid var(--volt-purple);
+      border-color: rgba(124, 58, 237, 0.25);
+    }
+    .faq-item.active .faq-trigger h4 {
+      color: var(--volt-light);
+    }
+    .faq-item.active .faq-trigger svg {
+      transform: rotate(180deg);
+      color: var(--volt-light);
+    }
+    .faq-item.active .faq-inner {
+      opacity: 1;
+    }
+
+    /* SECTION 8 — FINAL CTA */
+    .cta-sec {
+      padding: 90px 0;
+      text-align: center;
+      position: relative;
+    }
+    .cta-inner {
+      max-width: 680px;
+      margin: 0 auto;
+    }
+    .live-counter {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(124, 58, 237, 0.1);
+      border: 1px solid rgba(124, 58, 237, 0.2);
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--volt-light);
+      margin-bottom: 24px;
+      transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .live-counter span {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      background-color: var(--arc-cyan);
+      border-radius: 50%;
+      box-shadow: 0 0 6px var(--arc-cyan);
+    }
+    .cta-sec h2 {
+      font-family: var(--font-display);
+      font-size: 48px;
+      font-weight: 700;
+      line-height: 1.1;
+      margin-bottom: 12px;
+    }
+    .cta-sec p {
+      font-size: 16px;
+      color: var(--dim-silver);
+      margin-bottom: 32px;
+    }
+    .university-logos {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 16px 28px;
+      margin-top: 40px;
+      font-family: var(--font-sans);
+      font-size: 12px;
+      color: rgba(232, 238, 255, 0.2);
+      letter-spacing: 0.06em;
+      font-weight: 500;
+    }
+
+    /* FOOTER */
+    .footer {
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      background: var(--deep-navy);
+      padding: 48px 0 32px 0;
+    }
+    .footer-grid {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+    .footer-logo {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--ghost-white);
+      letter-spacing: -0.02em;
+    }
+    .footer-links {
+      display: flex;
+      gap: 24px;
+      font-size: 13px;
+    }
+    .footer-links a {
+      color: var(--dim-silver);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .footer-links a:hover {
+      color: var(--volt-light);
+    }
+    .footer-tagline {
+      text-align: center;
+      font-size: 13px;
+      color: var(--dim-silver);
+      border-top: 1px solid rgba(255, 255, 255, 0.03);
+      padding-top: 24px;
+    }
+
+    /* CONFETTI STYLING */
+    .confetti {
+      position: fixed;
+      width: 6px;
+      height: 10px;
+      opacity: 1;
+      pointer-events: none;
+      z-index: 9999;
+      will-change: transform;
+    }
+
+    /* ANIMATIONS & KEYFRAMES */
+    @keyframes banner-pulse {
+      0%, 100% { transform: scale(1); opacity: 0.8; }
+      50% { transform: scale(1.4); opacity: 1; }
+    }
+    @keyframes demo-float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    @keyframes marquee-left {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+    @keyframes marquee-right {
+      0% { transform: translateX(-50%); }
+      100% { transform: translateX(0); }
+    }
+    @keyframes checkmark-spring {
+      0% { transform: scale(0.6); opacity: 0; }
+      70% { transform: scale(1.1); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      16%, 50%, 83% { transform: translateX(-6px); }
+      33%, 66% { transform: translateX(6px); }
+    }
+
+    /* RESPONSIVE DESIGN (< 768px) */
+    @media (max-width: 768px) {
+      .countdown-banner {
+        padding: 0 16px;
+      }
+      .banner-left span {
+        font-size: 10px;
+      }
+      .banner-right {
+        display: none;
+      }
+      .hero-grid {
+        grid-template-columns: 1fr;
+        gap: 40px;
+      }
+      .hero-title {
+        font-size: 42px;
+      }
+      .email-form {
+        flex-direction: column;
+        gap: 12px;
+      }
+      .submit-btn {
+        width: 100%;
+      }
+      .stat-row {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+      .step-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+      .tab-panel {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+      .price-grid {
+        grid-template-columns: 1fr;
+        gap: 24px;
+      }
+      .footer-grid {
+        flex-direction: column;
+        gap: 20px;
+        text-align: center;
+      }
+      .word-fragment {
+        display: none !important;
+      }
+    }
+
+    /* REDUCED MOTION SUPPORT */
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        animation: none !important;
+        transition: none !important;
+      }
+      .strike-line {
+        width: 100% !important;
+      }
+      .scroll-left, .scroll-right {
+        animation: none !important;
+        flex-wrap: wrap !important;
+        width: 100% !important;
+      }
+      .word-fragment {
+        display: none !important;
+      }
+    }
+
+    /* ==========================================================================
+       COLD OUTREACH ENGINE
+       ========================================================================== */
+    .outreach-sec {
+      padding: 90px 0;
+      position: relative;
+    }
+    .outreach-container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+    .outreach-eyebrow {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      font-weight: 600;
+      text-align: center;
+    }
+    [data-audience="pro"] .outreach-eyebrow {
+      color: var(--arc-cyan);
+    }
+    [data-audience="student"] .outreach-eyebrow {
+      color: var(--volt-light);
+    }
+    
+    .outreach-headline {
+      font-family: var(--font-display);
+      font-size: 44px;
+      line-height: 1.15;
+      color: var(--ghost-white);
+      font-weight: 700;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+    .outreach-subheadline {
+      font-size: 17px;
+      color: var(--dim-silver);
+      line-height: 1.8;
+      max-width: 720px;
+      margin: 0 auto 48px auto;
+      text-align: center;
+    }
+
+    /* Outreach Pill Selectors */
+    .outreach-pills {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 48px;
+    }
+    .outreach-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.1);
+      color: var(--dim-silver);
+      font-family: var(--font-sans);
+      font-size: 13px;
+      font-weight: 500;
+      padding: 10px 18px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .outreach-pill:hover {
+      border-color: rgba(255,255,255,0.25);
+      color: var(--ghost-white);
+    }
+    
+    /* Active skins */
+    [data-audience="pro"] .outreach-pill.active {
+      background: var(--oa-color, #2D6EFF);
+      color: #ffffff;
+      border: none;
+      box-shadow: 0 0 14px 3px var(--oa-glow, rgba(45,110,255,0.35));
+    }
+    [data-audience="student"] .outreach-pill.active {
+      background: var(--oa-color, #7C3AED);
+      color: #ffffff;
+      border: none;
+      box-shadow: 0 0 14px 3px var(--oa-glow, rgba(124,58,237,0.35));
+    }
+
+    /* Three panel layout */
+    .outreach-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      position: relative;
+    }
+    
+    .outreach-panel {
+      background: rgba(10,15,30,0.75);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 14px;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      transition: all 0.3s ease;
+    }
+    .outreach-panel:hover {
+      border-color: rgba(255,255,255,0.15);
+    }
+    
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      margin-bottom: 20px;
+    }
+    .panel-lbl {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--dim-silver);
+    }
+    .panel-badge {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.05);
+    }
+    [data-audience="pro"] .panel-badge {
+      color: var(--arc-cyan);
+    }
+    [data-audience="student"] .panel-badge {
+      color: var(--volt-light);
+    }
+    
+    /* Input Fields styling */
+    .outreach-form-group {
+      margin-bottom: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .outreach-form-group label {
+      font-size: 12px;
+      color: var(--dim-silver);
+      font-family: var(--font-sans);
+      text-align: left;
+    }
+    .outreach-input {
+      background: var(--void);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 13.5px;
+      color: var(--ghost-white);
+      outline: none;
+      transition: all 0.3s ease;
+      border-left: 2px solid transparent;
+    }
+    .outreach-input:focus {
+      border-color: rgba(255,255,255,0.25);
+    }
+    .outreach-input.has-content {
+      border-left: 2px solid var(--oa-color);
+    }
+    
+    .outreach-textarea {
+      background: var(--void);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 13.5px;
+      color: var(--ghost-white);
+      outline: none;
+      transition: all 0.3s ease;
+      min-height: 120px;
+      resize: vertical;
+      border-left: 2px solid transparent;
+    }
+    .outreach-textarea:focus {
+      border-color: rgba(255,255,255,0.25);
+    }
+    .outreach-textarea.has-content {
+      border-left: 2px solid var(--oa-color);
+    }
+
+    /* Character counter and warnings */
+    .outreach-limit-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--dim-silver);
+      margin-top: 4px;
+    }
+    .char-count.warning {
+      color: #f59e0b;
+    }
+    .char-count.danger {
+      color: #ef4444;
+    }
+    
+    /* Tone Dial (segmented control) */
+    .tone-selector {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      background: var(--void);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 3px;
+    }
+    .tone-btn {
+      background: transparent;
+      border: none;
+      color: var(--dim-silver);
+      font-size: 12px;
+      font-weight: 500;
+      padding: 6px 0;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .tone-btn:hover {
+      color: var(--ghost-white);
+    }
+    .tone-btn.active {
+      background: var(--oa-color);
+      color: #ffffff;
+      font-weight: 600;
+    }
+
+    /* Panel 2 Toggle */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 12px;
+    }
+    .toggle-lbl {
+      font-size: 12px;
+      color: var(--ghost-white);
+    }
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 40px;
+      height: 20px;
+    }
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(255,255,255,0.1);
+      transition: .2s;
+      border-radius: 20px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 14px;
+      width: 14px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .2s;
+      border-radius: 50%;
+    }
+    input:checked + .slider {
+      background-color: var(--oa-color);
+    }
+    input:checked + .slider:before {
+      transform: translateX(20px);
+    }
+    
+    .referral-container {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+    }
+    .referral-container.expanded {
+      max-height: 80px;
+      margin-top: 10px;
+    }
+
+    /* Style Profile Indicator */
+    .profile-footer {
+      border-top: 1px solid rgba(255,255,255,0.06);
+      padding-top: 16px;
+      margin-top: auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .profile-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+    }
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+    .status-dot.active {
+      background-color: var(--arc-cyan);
+      box-shadow: 0 0 6px var(--arc-cyan);
+    }
+    .status-dot.inactive {
+      background-color: #f59e0b;
+    }
+    .status-lbl.active {
+      color: var(--arc-cyan);
+      font-weight: 700;
+    }
+    .status-lbl.inactive {
+      color: #f59e0b;
+    }
+    .profile-subtext {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--dim-silver);
+      margin-top: 2px;
+    }
+    .profile-link {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--arc-cyan);
+      background: none;
+      border: none;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    /* Panel 3 Output Area */
+    .draft-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      margin: auto;
+      height: 100%;
+      min-height: 250px;
+    }
+    .twin-icon-svg {
+      width: 40px;
+      height: 40px;
+      opacity: 0.1;
+      margin-bottom: 16px;
+    }
+    .placeholder-title {
+      font-size: 13px;
+      color: var(--dim-silver);
+      margin-bottom: 8px;
+    }
+    .placeholder-sub {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--dim-silver);
+    }
+    
+    .draft-output-block {
+      display: none;
+      flex-direction: column;
+      height: 100%;
+      justify-content: space-between;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+    .draft-output-block.visible {
+      display: flex;
+      opacity: 1;
+    }
+    .draft-output-block.glitching {
+      opacity: 0.3;
+      filter: blur(2px);
+    }
+    
+    .subject-lbl {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--dim-silver);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+      text-align: left;
+    }
+    .subject-txt {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--ghost-white);
+      margin-bottom: 12px;
+      text-align: left;
+    }
+    .divider-line {
+      height: 1px;
+      background: rgba(255,255,255,0.06);
+      width: 100%;
+      margin-bottom: 16px;
+      position: relative;
+    }
+    .divider-fill {
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      background: var(--oa-color);
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+    .email-body-txt {
+      font-size: 13px;
+      color: var(--ghost-white);
+      line-height: 1.85;
+      white-space: pre-line;
+      text-align: left;
+    }
+    .typing-cursor {
+      display: inline-block;
+      width: 2px;
+      height: 14px;
+      background-color: var(--oa-color);
+      animation: cursor-blink 0.8s infinite;
+      margin-left: 2px;
+      vertical-align: middle;
+    }
+    @keyframes cursor-blink {
+      0%, 100% { opacity: 0; }
+      50% { opacity: 1; }
+    }
+    
+    /* Action Bar buttons */
+    .draft-actions-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 24px;
+      padding-top: 16px;
+      border-top: 1px solid rgba(255,255,255,0.05);
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+    .draft-actions-row.fade-in {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .action-sub-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--void);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ghost-white);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .action-sub-btn:hover {
+      border-color: rgba(255,255,255,0.2);
+    }
+    
+    .badges-metrics-row {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .badges-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .metric-badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+      opacity: 0;
+      transform: scale(0.8);
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .metric-badge.pop-in {
+      opacity: 1;
+      transform: scale(1);
+    }
+    .metric-badge.green {
+      background: rgba(16,185,129,0.1);
+      border: 1px solid rgba(16,185,129,0.2);
+      color: #10b981;
+    }
+    .metric-badge.amber {
+      background: rgba(245,158,11,0.1);
+      border: 1px solid rgba(245,158,11,0.2);
+      color: #f59e0b;
+    }
+    .metric-badge.red {
+      background: rgba(239,68,68,0.1);
+      border: 1px solid rgba(239,68,68,0.2);
+      color: #ef4444;
+    }
+    
+    .metrics-words {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--dim-silver);
+      text-align: right;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+    .metrics-words.visible {
+      opacity: 1;
+    }
+
+    /* Generate button styling */
+    .generate-btn-row {
+      display: flex;
+      justify-content: center;
+      padding: 16px 0;
+    }
+    .outreach-generate-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      height: 44px;
+      padding: 0 28px;
+      font-family: var(--font-display);
+      font-size: 14px;
+      font-weight: 600;
+      color: #ffffff;
+      background: var(--oa-color);
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      opacity: 0.5;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .outreach-generate-btn.enabled {
+      opacity: 1;
+    }
+    .outreach-generate-btn.enabled:hover {
+      transform: scale(1.03);
+      box-shadow: 0 0 24px 8px var(--oa-glow);
+    }
+    .outreach-generate-btn.pulse {
+      animation: pulse-button-anim 0.4s ease;
+    }
+    .outreach-generate-btn.loading {
+      background: linear-gradient(90deg, var(--oa-color), rgba(255,255,255,0.15), var(--oa-color));
+      background-size: 200% auto;
+      animation: btn-shimmer 1.5s linear infinite;
+    }
+    
+    @keyframes pulse-button-anim {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.04); }
+    }
+    @keyframes btn-shimmer {
+      0% { background-position: 0% center; }
+      100% { background-position: -200% center; }
+    }
+
+    /* Modal Styling */
+    .outreach-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(5,8,16,0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+      padding: 16px;
+    }
+    .outreach-modal.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .modal-card {
+      background: rgba(10,15,30,0.95);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 20px;
+      padding: 40px;
+      max-width: 520px;
+      width: 100%;
+      position: relative;
+    }
+    .modal-close {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: none;
+      border: none;
+      color: var(--dim-silver);
+      cursor: pointer;
+      padding: 4px;
+    }
+    .modal-close:hover {
+      color: var(--ghost-white);
+    }
+    .modal-title {
+      font-family: var(--font-display);
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--ghost-white);
+      margin-bottom: 8px;
+    }
+    .modal-sub {
+      font-size: 14px;
+      color: var(--dim-silver);
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+    .modal-textarea {
+      width: 100%;
+      background: var(--void);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 13.5px;
+      color: var(--ghost-white);
+      min-height: 180px;
+      outline: none;
+      margin-bottom: 16px;
+    }
+    .modal-progress-bg {
+      width: 100%;
+      height: 4px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+    .modal-progress-fill {
+      height: 100%;
+      background: var(--oa-color);
+      width: 0%;
+      transition: width 0.1s linear;
+    }
+    .modal-submit-btn {
+      width: 100%;
+      height: 48px;
+      background: var(--oa-color);
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      font-family: var(--font-display);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .modal-submit-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .modal-skip-link {
+      display: block;
+      text-align: center;
+      font-size: 12px;
+      color: var(--dim-silver);
+      background: none;
+      border: none;
+      cursor: pointer;
+      margin-top: 12px;
+      text-decoration: underline;
+    }
+
+    /* AUDIENCE ACCENTS */
+    [data-audience="pro"] {
+      --oa-color: #2D6EFF;
+      --oa-glow: rgba(45,110,255,0.35);
+    }
+    [data-audience="student"] {
+      --oa-color: #7C3AED;
+      --oa-glow: rgba(124,58,237,0.35);
+    }
+
+    /* RESPONSIVE LAYOUT */
+    @media (max-width: 900px) {
+      .outreach-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+    }
+    @media (max-width: 768px) {
+      .outreach-headline {
+        font-size: 32px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- SCROLL PROGRESS BAR -->
+  <div id="scroll-progress"></div>
+
+  <!-- SECTION 0 — LAUNCH COUNTDOWN BANNER -->
+  <div class="countdown-banner">
+    <div class="banner-left">
+      <div class="pulse-dot"></div>
+      <span>STUDENT LAUNCH</span>
+    </div>
+    <div class="banner-center" id="countdown-timer">
+      Launching in
+      <div class="timer-group"><span class="timer-num" id="timer-days">14</span><span class="timer-lbl">d</span></div>:
+      <div class="timer-group"><span class="timer-num" id="timer-hours">00</span><span class="timer-lbl">h</span></div>:
+      <div class="timer-group"><span class="timer-num" id="timer-minutes">00</span><span class="timer-lbl">m</span></div>:
+      <div class="timer-group"><span class="timer-num" id="timer-seconds">00</span><span class="timer-lbl">s</span></div>
+    </div>
+    <div class="banner-right">🎓 Free for students</div>
+  </div>
+
+  <!-- BACKGROUND CANVAS & WORDS -->
+  <canvas id="bg-canvas"></canvas>
+  <div id="words-layer"></div>
+  <div class="aurora-tr"></div>
+  <div class="aurora-bl"></div>
+
+  <!-- SECTION 1 — HERO -->
+  <section class="hero-sec">
+    <div class="container hero-grid">
+      <div class="hero-left">
+        <div class="badge-pill">FOR STUDENTS</div>
+        <h1 class="hero-title">
+          Every AI essay<br>
+          sounds the <span class="strike-container">same.<span class="strike-line" id="hero-strike"></span></span><br>
+          Yours won't.
+        </h1>
+        <p class="hero-sub">
+          Your Twin learns how you actually write — your sentence length, your transitions, the way you open arguments, even how you hedge. Then it writes like you. Not like everyone else who uses AI.
+        </p>
+        <div class="social-proof-micro">
+          <span>★★★★★</span> Trusted by 2,400+ students at 180+ universities
+        </div>
+
+        <!-- HERO Form -->
+        <div class="email-form-container">
+          <form class="email-form" id="hero-email-form">
+            <input type="email" class="email-input" placeholder="your.name@university.edu" required id="hero-email-input">
+            <button type="submit" class="submit-btn">Claim your free Twin →</button>
+          </form>
+          <div id="hero-success" style="display: none;" class="form-success">
+            <div class="success-headline">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span>You're in. Your Twin is being prepared.</span>
+            </div>
+            <div class="success-sub">
+              <span>You're #<span class="queue-num" id="hero-queue">2491</span> on the list. Share to move up →</span>
+              <button class="copy-btn" id="hero-copy-btn">Copy Link</button>
+            </div>
+          </div>
+          <div id="hero-error" style="display: none;" class="error-msg"></div>
+        </div>
+
+        <div class="trust-badges">
+          <span>🔒 No credit card</span>
+          <span>·</span>
+          <span>✓ Free during beta</span>
+          <span>·</span>
+          <span>⚡ Ready in 10 min</span>
+        </div>
+      </div>
+
+      <div class="hero-right">
+        <div class="glass demo-card">
+          <div class="tab-bar">
+            <div class="dot-group">
+              <div class="dot dot-r"></div>
+              <div class="dot dot-y"></div>
+              <div class="dot dot-g"></div>
+            </div>
+            <div class="tab-title">twin_essay_draft.doc</div>
+            <div style="width: 24px;"></div>
+          </div>
+          <div class="card-divider"></div>
+          
+          <div class="panel panel-a">
+            <div class="lbl-generic">❌ GENERIC AI</div>
+            <p class="text-dimmed">
+              "The Industrial Revolution marked a pivotal turning point in human history. This essay will examine the key factors that contributed to its emergence and analyze its far-reaching consequences on society and economy."
+            </p>
+          </div>
+
+          <div class="rewrite-middle">YOUR TWIN REWROTE THIS ↓</div>
+
+          <div class="panel panel-b">
+            <div class="lbl-twin">✓ YOUR TWIN</div>
+            <p class="text-bright">
+              "Nobody talks about how weird it is that Britain industrialized first. Plenty of countries had coal. Plenty had rivers. What Britain had — and this is what most textbooks gloss over — was a specific, strange collision of geography, law, and accumulated tinkering."
+            </p>
+          </div>
+
+          <div class="card-footer-info">
+            <div>Learned from 8 of your past essays</div>
+            <div class="progress-track">
+              <div class="progress-bar"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 2 — THE REAL PROBLEM -->
+  <section class="problem-sec">
+    <div class="container" style="max-width: 800px;">
+      <div class="eyebrow-large">THE PROBLEM WITH AI ESSAYS RIGHT NOW</div>
+      <h2 class="sec-title-large">Professors don't just detect AI. They detect someone else's AI.</h2>
+      <p class="problem-body">
+        ChatGPT, Gemini, every AI tool — they all have tells. Sentence rhythm. Transition phrases. The way they summarize. Your professor has read thousands of essays. They know what 'AI voice' sounds like.<br><br>
+        Your Twin is different. It doesn't write in AI voice. It writes in your voice — because it learned from you.
+      </p>
+      
+      <div class="stat-row">
+        <div class="stat-card">
+          <div class="stat-num">73%</div>
+          <div class="stat-lbl">of students say AI makes their work sound generic</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">4.2hrs</div>
+          <div class="stat-lbl">saved per assignment on average</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">0</div>
+          <div class="stat-lbl">twins caught by AI detectors in beta testing</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 3 — HOW IT WORKS -->
+  <section class="how-sec">
+    <div class="container">
+      <h2 class="sec-title-center">Set up in 10 minutes. Sounds like you forever.</h2>
+      <div class="step-grid">
+        <!-- Step A -->
+        <div class="glass step-card">
+          <div class="icon-wrapper">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--arc-cyan)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+          </div>
+          <h3>Paste 5 things written by you</h3>
+          <p>Old essays, emails to professors, even your notes. Your Twin reads them silently and maps your actual voice — not a generic student voice.</p>
+          <div class="step-tag">Works with Google Docs, Word, plain text</div>
+        </div>
+        <!-- Step B -->
+        <div class="glass step-card">
+          <div class="icon-wrapper">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--volt-light)" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+          </div>
+          <h3>Give it a task</h3>
+          <p>Tell it what you need. Essay intro, conclusion, email to a professor, scholarship application. One sentence is enough to set it off.</p>
+          <div class="step-tag">Email · Essay · Application · Lab report</div>
+        </div>
+        <!-- Step C -->
+        <div class="glass step-card">
+          <div class="icon-wrapper">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--arc-cyan)" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4z"></path></svg>
+          </div>
+          <h3>Edit, don't rewrite</h3>
+          <p>You get back a draft in your voice. Tweak it, build on it, submit it. You wrote it — your Twin just took care of the hardest first mile.</p>
+          <div class="step-tag">You're always the author</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COLD OUTREACH ENGINE -->
+  <section id="outreach-engine" data-audience="student" class="outreach-accent outreach-sec">
+    <div class="outreach-container">
+      <div class="outreach-eyebrow">Cold Outreach Engine</div>
+      <h2 class="outreach-headline">Land the internship. Or the research lab spot.</h2>
+      <p class="outreach-subheadline">Write perfect, non-cringe cold emails to recruiters, professors, and alumni. Real human tone, zero robotic AI slop.</p>
+
+      <div class="outreach-pills" id="outreach-pills">
+        <button class="outreach-pill active" data-type="internship">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5"/></svg>
+          Internship
+        </button>
+        <button class="outreach-pill" data-type="invite-only">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Invite-Only
+        </button>
+        <button class="outreach-pill" data-type="job-opportunity">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+          Job Opportunity
+        </button>
+        <button class="outreach-pill" data-type="networking">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Networking
+        </button>
+        <button class="outreach-pill" data-type="research-lab">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m10 15 5-3-5-3v6Z"/></svg>
+          Research/Lab
+        </button>
+        <button class="outreach-pill" data-type="event-access">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Event Access
+        </button>
+      </div>
+
+      <div class="outreach-grid">
+        <!-- Panel 1: Target Details -->
+        <div class="outreach-panel">
+          <div class="panel-header">
+            <span class="panel-lbl">01 / TARGET DETAILS</span>
+            <span class="panel-badge">Profile Aligned</span>
+          </div>
+          
+          <div class="outreach-form-group">
+            <label id="lbl-company" for="input-company">Company or Organization</label>
+            <input type="text" id="input-company" class="outreach-input" placeholder="e.g. Stripe, Google DeepMind, local architecture firm...">
+          </div>
+
+          <div class="outreach-form-group">
+            <label id="lbl-description" for="input-description">Describe the role or opportunity</label>
+            <textarea id="input-description" class="outreach-textarea" placeholder="Summer 2025 product design internship. 12 weeks, SF office. Looking for someone who can own end-to-end design for their payments dashboard..."></textarea>
+            <div class="outreach-limit-row">
+              <span id="warn-description" class="char-warning">Min 10 characters required</span>
+              <span id="count-description">0/400</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel 2: Your Context -->
+        <div class="outreach-panel">
+          <div class="panel-header">
+            <span class="panel-lbl">02 / YOUR CONTEXT</span>
+            <span class="panel-badge">Identity Sync</span>
+          </div>
+
+          <div class="outreach-form-group">
+            <label for="input-role">Who are you? (Role/Major)</label>
+            <input type="text" id="input-role" class="outreach-input" placeholder="e.g. CS Sophomore at Berkeley, self-taught designer..." value="Computer Science student">
+          </div>
+
+          <div class="outreach-form-group">
+            <label id="lbl-strength" for="input-strength">Your strongest relevant angle</label>
+            <input type="text" id="input-strength" class="outreach-input" placeholder="Built a checkout flow redesign that cut drop-off by 31% in my last project">
+          </div>
+
+          <div class="outreach-form-group">
+            <label>Tone Dial</label>
+            <div class="tone-selector">
+              <button class="tone-btn active" data-tone="confident">Confident</button>
+              <button class="tone-btn" data-tone="humble">Humble</button>
+              <button class="tone-btn" data-tone="short">Short</button>
+            </div>
+          </div>
+
+          <div class="toggle-row">
+            <span class="toggle-lbl">Include referral angle?</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="toggle-referral">
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="referral-container" id="referral-input-container">
+            <div class="outreach-form-group" style="margin-top: 10px;">
+              <label for="input-referral">Who referred you? (Name or common connection)</label>
+              <input type="text" id="input-referral" class="outreach-input" placeholder="e.g. Dr. Roberts, mutual connection Sarah Chen...">
+            </div>
+          </div>
+
+          <!-- Style profile footer -->
+          <div class="profile-footer">
+            <div>
+              <div class="profile-status">
+                <span class="status-dot inactive" id="profile-status-dot"></span>
+                <span class="status-lbl inactive" id="profile-status-lbl">NO VOICE PROFILE</span>
+              </div>
+              <div class="profile-subtext" id="profile-subtext">Default AI tone will be used</div>
+            </div>
+            <button class="profile-link" id="btn-open-upload-modal">Upload style sample</button>
+          </div>
+        </div>
+
+        <!-- Panel 3: Twin Draft -->
+        <div class="outreach-panel" style="position: relative;">
+          <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="panel-lbl">03 / TWIN DRAFT</span>
+              <span id="autosave-indicator" style="font-family: monospace; font-size: 8px; color: #00E5FF; opacity: 0; transition: opacity 0.3s; white-space: nowrap;"></span>
+            </div>
+            <div class="panel-tabs-container" style="display: flex; gap: 4px; background: rgba(5,8,16,0.5); padding: 2px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05);">
+              <button class="panel-tab-btn active" id="tab-active-draft" style="font-family: monospace; font-size: 9px; padding: 4px 8px; border-radius: 4px; background: rgba(124,58,237,0.15); color: rgb(167,139,250); border: 1px solid rgba(124,58,237,0.2); cursor: pointer; transition: all 0.2s;">
+                Active Draft
+              </button>
+              <button class="panel-tab-btn" id="tab-saved-drafts" style="font-family: monospace; font-size: 9px; padding: 4px 8px; border-radius: 4px; background: transparent; color: #7A85A3; border: 1px solid transparent; cursor: pointer; transition: all 0.2s;">
+                Saved (<span id="saved-drafts-count">0</span>)
+              </button>
+            </div>
+          </div>
+
+          <!-- Placeholder -->
+          <div class="draft-placeholder" id="draft-placeholder-view">
+            <svg class="twin-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m10 15 5-3-5-3v6Z"/></svg>
+            <div class="placeholder-title">Ready for generation</div>
+            <div class="placeholder-sub">Fill out Target Details to run the engine</div>
+          </div>
+
+          <!-- Saved Drafts Block -->
+          <div class="saved-drafts-block" id="saved-drafts-view" style="display: none; height: 100%; min-height: 300px; overflow-y: auto; padding-right: 4px; flex-direction: column;">
+            <div id="saved-drafts-list" style="display: flex; flex-direction: column; gap: 10px; max-height: 380px;">
+              <!-- Saved items dynamically inserted here -->
+            </div>
+          </div>
+
+          <!-- Draft output -->
+          <div class="draft-output-block" id="draft-output-view">
+            <div>
+              <div class="subject-lbl">Subject (Click to edit)</div>
+              <div class="subject-txt" id="draft-subject" style="border-radius: 4px; padding: 2px 4px; outline: none; transition: all 0.2s;" placeholder="Enter subject..."></div>
+              
+              <div class="divider-line">
+                <div class="divider-fill" id="draft-divider-fill"></div>
+              </div>
+
+              <div class="email-body-txt" id="draft-body" style="border-radius: 4px; padding: 2px 4px; outline: none; transition: all 0.2s; min-height: 150px; white-space: pre-wrap;" placeholder="Enter body..."></div>
+            </div>
+
+            <div class="badges-metrics-row">
+              <div class="draft-actions-row" id="draft-actions">
+                <button class="action-sub-btn" id="btn-copy">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  <span id="txt-copy">Copy email</span>
+                </button>
+                <button class="action-sub-btn" id="btn-save-draft">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="icon-save-draft" class="text-[#A78BFA]"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                  <span id="txt-save-draft">Save Draft</span>
+                </button>
+                <button class="action-sub-btn" id="btn-save-as-new" style="display: none; padding: 4px 8px;">
+                  <span>Save as New</span>
+                </button>
+                <button class="action-sub-btn" id="btn-gmail">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                  <span>Open in Gmail</span>
+                </button>
+                <button class="action-sub-btn" id="btn-regenerate" style="margin-left: auto;">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                  <span>Regen version</span>
+                </button>
+              </div>
+
+              <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <div class="badges-container" id="badges-container">
+                  <span class="metric-badge green" id="badge-word-limit">Under 200 words</span>
+                  <span class="metric-badge green" id="badge-spam">Spam check passed</span>
+                </div>
+                <div class="metrics-words" id="metrics-words-display"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="generate-btn-row">
+        <button class="outreach-generate-btn" id="btn-generate-outreach" disabled>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+          Generate outreach sequence
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- STYLE UPLOAD MODAL -->
+  <div class="outreach-modal" id="upload-style-modal">
+    <div class="modal-card">
+      <button class="modal-close" id="btn-close-modal">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+      <div class="modal-title" id="modal-title-text">Sync Your Writing Voice</div>
+      <p class="modal-sub" id="modal-sub-text">Paste a sample of your writing below (an old essay, a professional email, or personal note). Our model will extract your unique syntax, vocabulary size, and sentence length distributions.</p>
+      
+      <textarea class="modal-textarea" id="text-style-sample" placeholder="Paste at least 50 words of your own writing here..."></textarea>
+
+      <!-- Progress bar -->
+      <div id="modal-progress-container" style="display: none; margin-bottom: 20px;">
+        <div class="outreach-limit-row" style="margin-bottom: 6px;">
+          <span id="modal-status-msg" style="color: var(--arc-cyan); font-weight: 600;">Analyzing style profile...</span>
+          <span id="modal-percentage-txt">0%</span>
+        </div>
+        <div class="modal-progress-bg">
+          <div class="modal-progress-fill" id="modal-progress-bar"></div>
+        </div>
+      </div>
+
+      <button class="modal-submit-btn" id="btn-submit-style" disabled>Analyze and Sync My Voice</button>
+      <button class="modal-skip-link" id="btn-skip-modal">Skip and use default AI tone</button>
+    </div>
+  </div>
+
+  <!-- SECTION 4 — STUDENT USE CASES -->
+  <section class="use-sec">
+    <div class="container">
+      <div class="tabs-nav">
+        <button class="tab-trigger active" onclick="switchTab(0)">Essay Intros</button>
+        <button class="tab-trigger" onclick="switchTab(1)">Prof Emails</button>
+        <button class="tab-trigger" onclick="switchTab(2)">Applications</button>
+        <button class="tab-trigger" onclick="switchTab(3)">Lab Reports</button>
+      </div>
+
+      <div class="use-content-container">
+        <!-- TAB 1 -->
+        <div class="tab-panel active" id="panel-0">
+          <div class="case-box">
+            <div class="case-title" style="color: var(--arc-cyan);">
+              <span>🎯 BRIEF</span>
+            </div>
+            <p class="brief-txt">"Intro for a 2000-word essay on the ethics of genetic engineering"</p>
+          </div>
+          <div class="case-box">
+            <div class="case-title" style="color: var(--volt-light);">
+              <span>⚡ TWIN OUTPUT (YOUR VOICE)</span>
+            </div>
+            <p class="twin-txt">"The question isn't whether we should edit human genes. We already do — in labs, in IVF clinics, in the seeds we've been selectively breeding for centuries. The real question, the one nobody wants to answer plainly, is where we decide to stop."</p>
+          </div>
+        </div>
+
+        <!-- TAB 2 -->
+        <div class="tab-panel" id="panel-1">
+          <div class="case-box">
+            <div class="case-title" style="color: var(--arc-cyan);">
+              <span>🎯 BRIEF</span>
+            </div>
+            <p class="brief-txt">"Ask Prof. Chen for a deadline extension, mental health reasons, keep it brief"</p>
+          </div>
+          <div class="case-box">
+            <div class="case-title" style="color: var(--volt-light);">
+              <span>⚡ TWIN OUTPUT (YOUR VOICE)</span>
+            </div>
+            <p class="twin-txt">"Hi Professor Chen,
+
+I'm writing to ask whether an extension on the Friday submission might be possible. I've been dealing with some health issues this week that have set me back more than I'd like to admit.
+
+I have the work started and can submit by Monday — I just need a couple of extra days.
+
+Thanks for considering it.
+[Name]"</p>
+          </div>
+        </div>
+
+        <!-- TAB 3 -->
+        <div class="tab-panel" id="panel-2">
+          <div class="case-box">
+            <div class="case-title" style="color: var(--arc-cyan);">
+              <span>🎯 BRIEF</span>
+            </div>
+            <p class="brief-txt">"Why I want to study Computer Science, 150 words, personal statement style"</p>
+          </div>
+          <div class="case-box">
+            <div class="case-title" style="color: var(--volt-light);">
+              <span>⚡ TWIN OUTPUT (YOUR VOICE)</span>
+            </div>
+            <p class="twin-txt">"I didn't fall in love with computers. I fell in love with the moment something that shouldn't work, works.
+
+The first time I fixed a broken loop at 2am and the output was exactly what I'd imagined — that feeling didn't leave. I kept chasing it. Through bad code and worse documentation, through projects that taught me more by failing than succeeding.
+
+Computer Science, for me, is the formal name for what I'd already been doing."</p>
+          </div>
+        </div>
+
+        <!-- TAB 4 -->
+        <div class="tab-panel" id="panel-3">
+          <div class="case-box">
+            <div class="case-title" style="color: var(--arc-cyan);">
+              <span>🎯 BRIEF</span>
+            </div>
+            <p class="brief-txt">"Discussion section for chemistry titration lab, results were slightly off expected"</p>
+          </div>
+          <div class="case-box">
+            <div class="case-title" style="color: var(--volt-light);">
+              <span>⚡ TWIN OUTPUT (YOUR VOICE)</span>
+            </div>
+            <p class="twin-txt">"The endpoint volumes obtained (24.3 mL vs. the expected 24.0 mL) suggest a minor systematic error, most likely attributable to indicator color change recognition rather than procedural deviation. Given that both trials yielded consistent results within 0.2 mL of each other, the precision of the method is maintained even where absolute accuracy fell marginally short."</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 5 — SOCIAL PROOF WALL -->
+  <section class="quotes-sec">
+    <div class="container text-center">
+      <div class="eyebrow-large">WHAT STUDENTS ARE SAYING</div>
+      <h2 class="sec-title-large" style="font-size:36px; margin-bottom:8px;">From beta users at universities worldwide</h2>
+    </div>
+    
+    <div class="marquee-container">
+      <!-- ROW 1 -->
+      <div class="marquee-row scroll-left">
+        <!-- 1 -->
+        <div class="quote-card">
+          <p class="quote-text">"I submitted 4 essays this semester. My professor told me my writing had 'really matured'. It's the same voice — just faster."</p>
+          <div class="author-row">
+            <div class="avatar">AK</div>
+            <div class="author-meta"><div class="author-name">Aisha K.</div><div class="author-uni">3rd Year, UCL</div></div>
+          </div>
+        </div>
+        <!-- 2 -->
+        <div class="quote-card">
+          <p class="quote-text">"Finally sounds like me and not like a Wikipedia article. That's genuinely all I wanted."</p>
+          <div class="author-row">
+            <div class="avatar">MT</div>
+            <div class="author-meta"><div class="author-name">Marcus T.</div><div class="author-uni">2nd Year, UT Austin</div></div>
+          </div>
+        </div>
+        <!-- 3 -->
+        <div class="quote-card">
+          <p class="quote-text">"The professor email templates alone are worth it. I used to spend 20 minutes writing a 3-line email."</p>
+          <div class="author-row">
+            <div class="avatar">SS</div>
+            <div class="author-meta"><div class="author-name">Priya S.</div><div class="author-uni">Final Year, NUS</div></div>
+          </div>
+        </div>
+        <!-- 4 -->
+        <div class="quote-card">
+          <p class="quote-text">"I was skeptical. Pasted 6 old essays. The first draft it gave me had my exact habit of starting sentences with 'But'. I was sold."</p>
+          <div class="author-row">
+            <div class="avatar">JL</div>
+            <div class="author-meta"><div class="author-name">Jamie L.</div><div class="author-uni">Masters, Edinburgh</div></div>
+          </div>
+        </div>
+        <!-- 5 -->
+        <div class="quote-card">
+          <p class="quote-text">"Used it for my personal statement. Got into my first choice. Not saying it's the reason. But also not not saying that."</p>
+          <div class="author-row">
+            <div class="avatar">RM</div>
+            <div class="author-meta"><div class="author-name">Rohan M.</div><div class="author-uni">Gap Year → Oxford</div></div>
+          </div>
+        </div>
+        <!-- 6 -->
+        <div class="quote-card">
+          <p class="quote-text">"It learned that I never use semicolons. Somehow. I don't even think I knew that."</p>
+          <div class="author-row">
+            <div class="avatar">SA</div>
+            <div class="author-meta"><div class="author-name">Sofia A.</div><div class="author-uni">1st Year, McGill</div></div>
+          </div>
+        </div>
+        
+        <!-- ROW 1 DUPLICATE FOR SEAMLESS LOOP -->
+        <div class="quote-card">
+          <p class="quote-text">"I submitted 4 essays this semester. My professor told me my writing had 'really matured'. It's the same voice — just faster."</p>
+          <div class="author-row">
+            <div class="avatar">AK</div>
+            <div class="author-meta"><div class="author-name">Aisha K.</div><div class="author-uni">3rd Year, UCL</div></div>
+          </div>
+        </div>
+        <div class="quote-card">
+          <p class="quote-text">"Finally sounds like me and not like a Wikipedia article. That's genuinely all I wanted."</p>
+          <div class="author-row">
+            <div class="avatar">MT</div>
+            <div class="author-meta"><div class="author-name">Marcus T.</div><div class="author-uni">2nd Year, UT Austin</div></div>
+          </div>
+        </div>
+        <div class="quote-card">
+          <p class="quote-text">"The professor email templates alone are worth it. I used to spend 20 minutes writing a 3-line email."</p>
+          <div class="author-row">
+            <div class="avatar">SS</div>
+            <div class="author-meta"><div class="author-name">Priya S.</div><div class="author-uni">Final Year, NUS</div></div>
+          </div>
+        </div>
+        <div class="quote-card">
+          <p class="quote-text">"I was skeptical. Pasted 6 old essays. The first draft it gave me had my exact habit of starting sentences with 'But'. I was sold."</p>
+          <div class="author-row">
+            <div class="avatar">JL</div>
+            <div class="author-meta"><div class="author-name">Jamie L.</div><div class="author-uni">Masters, Edinburgh</div></div>
+          </div>
+        </div>
+        <div class="quote-card">
+          <p class="quote-text">"Used it for my personal statement. Got into my first choice. Not saying it's the reason. But also not not saying that."</p>
+          <div class="author-row">
+            <div class="avatar">RM</div>
+            <div class="author-meta"><div class="author-name">Rohan M.</div><div class="author-uni">Gap Year → Oxford</div></div>
+          </div>
+        </div>
+        <div class="quote-card">
+          <p class="quote-text">"It learned that I never use semicolons. Somehow. I don't even think I knew that."</p>
+          <div class="author-row">
+            <div class="avatar">SA</div>
+            <div class="author-meta"><div class="author-name">Sofia A.</div><div class="author-uni">1st Year, McGill</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ROW 2 -->
+      <div class="marquee-row scroll-right">
+        <!-- 7 -->
+        <div class="quote-card">
+          <p class="quote-text">"My roommate submitted the same ChatGPT essay as three other people in our class. Different topic, somehow identical structure."</p>
+          <div class="author-row">
+            <div class="avatar">DC</div>
+            <div class="author-meta"><div class="author-name">David C.</div><div class="author-uni">2nd Year, Melbourne</div></div>
+          </div>
+        </div>
+        <!-- 8 -->
+        <div class="quote-card">
+          <p class="quote-text">"The lab report voice is different from my essay voice. Twin figured that out by itself."</p>
+          <div class="author-row">
+            <div class="avatar">NO</div>
+            <div class="author-meta"><div class="author-name">Nadia O.</div><div class="author-uni">3rd Year, Imperial</div></div>
+          </div>
+        </div>
+        <!-- 9 -->
+        <div class="quote-card">
+          <p class="quote-text">"Passed Turnitin. Passed GPTZero. More importantly, passed my own read-through feeling like me."</p>
+          <div class="author-row">
+            <div class="avatar">CW</div>
+            <div class="author-meta"><div class="author-name">Chen W.</div><div class="author-uni">PhD, Stanford</div></div>
+          </div>
+        </div>
+        <!-- 10 -->
+        <div class="quote-card">
+          <p class="quote-text">"I write slowly. This doesn't make me write faster — it makes what I do write actually usable."</p>
+          <div class="author-row">
+            <div class="avatar">LB</div>
+            <div class="author-meta"><div class="author-name">Lena B.</div><div class="author-uni">2nd Year, Amsterdam</div></div>
+          </div>
+        </div>
+        <!-- 11 -->
+        <div class="quote-card">
+          <p class="quote-text">"Sent it my worst essay and my best essay. It figured out the difference and leaned toward the good one. Smart."</p>
+          <div class="author-row">
+            <div class="avatar">KA</div>
+            <div class="author-meta"><div class="author-name">Kwame A.</div><div class="author-uni">Final Year, Ghana/LSE</div></div>
+          </div>
+        </div>
+        <!-- 12 -->
+        <div class="quote-card">
+          <p class="quote-text">"It's like having a writing tutor who actually remembers how you write."</p>
+          <div class="author-row">
+            <div class="avatar">IR</div>
+            <div class="author-meta"><div class="author-name">Isabelle R.</div><div class="author-uni">Sciences Po</div></div>
+          </div>
+        </div>
+
+        <!-- ROW 2 DUPLICATE FOR SEAMLESS LOOP -->
+        <div class="quote-card">
+          <p class="quote-text">"My roommate submitted the same ChatGPT essay as three other people in our class. Different topic, somehow identical structure."</p>
+          <div class="author-row">
+            <div class="avatar">DC</div>
+            <div class="author-meta"><div class="author-name">David C.</div><div class="author-uni">2nd Year, Melbourne</div></div>
+          </div>
+        </div>
+        <div class="quote-card">
+          <p class="quote-text">"The lab report voice is different from my essay voice. Twin figured that out by itself."</p>
+          <div class="author-row">
+            <div class="avatar">NO</div>
+            <div class="author-meta"><div class="author-name">Nadia O.</div><div class="author-uni">3rd Year, Imperial</div></div>
+          </div>
+        </div>
+        <div class="quote-card">
+          <p class="quote-text">"Passed Turnitin. Passed GPTZero. More importantly, passed my own read-through feeling like me."</p>
+          <div class="author-row">
+            <div class="avatar">CW</div>
+            <div class="author-meta"><div class="author-name">Chen W.</div><div class="author-uni">PhD, Stanford</div></div>
+          </div>
+        </div>
+        <div class="quote-card">
+          <p class="quote-text">"I write slowly. This doesn't make me write faster — it makes what I do write actually usable."</p>
+          <div class="author-row">
+            <div class="avatar">LB</div>
+            <div class="author-meta"><div class="author-name">Lena B.</div><div class="author-uni">2nd Year, Amsterdam</div></div>
+          </div>
+        </div>
+        <div class="quote-card">
+          <p class="quote-text">"Sent it my worst essay and my best essay. It figured out the difference and leaned toward the good one. Smart."</p>
+          <div class="author-row">
+            <div class="avatar">KA</div>
+            <div class="author-meta"><div class="author-name">Kwame A.</div><div class="author-uni">Final Year, Ghana/LSE</div></div>
+          </div>
+        </div>
+        <div class="quote-card">
+          <p class="quote-text">"It's like having a writing tutor who actually remembers how you write."</p>
+          <div class="author-row">
+            <div class="avatar">IR</div>
+            <div class="author-meta"><div class="author-name">Isabelle R.</div><div class="author-uni">Sciences Po</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 6 — PRICING -->
+  <section class="price-sec">
+    <div class="container">
+      <div class="text-center">
+        <div class="eyebrow-large">SIMPLE, STUDENT-FIRST PLAN</div>
+        <h2 class="sec-title-large" style="margin-bottom: 0;">Built for students. Priced like it.</h2>
+      </div>
+
+      <div class="price-grid">
+        <!-- CARD 1 -->
+        <div class="glass price-card">
+          <div class="price-badge">CURRENT PLAN</div>
+          <h3>Student Beta</h3>
+          <div class="price-amt-row">
+            <span class="price-large">$0</span>
+            <span class="price-unit">/month</span>
+          </div>
+          <div class="price-billed">Free access during beta testing</div>
+          
+          <div class="features-list">
+            <div class="feature-item">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span>Up to 3 essays/month</span>
+            </div>
+            <div class="feature-item">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span>Email drafts (unlimited)</span>
+            </div>
+            <div class="feature-item">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span>Style learning from 5 docs</span>
+            </div>
+            <div class="feature-item">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span>All 4 output modes</span>
+            </div>
+            <div class="feature-item">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span>Basic tone controls</span>
+            </div>
+          </div>
+
+          <button class="price-btn btn-ghost" onclick="scrollToHero()">Start free →</button>
+          <div class="price-note">No card needed. Ever, during beta.</div>
+        </div>
+
+        <!-- CARD 2 -->
+        <div class="glass price-card price-featured">
+          <div class="price-badge popular">MOST POPULAR</div>
+          <h3>Student Pro</h3>
+          <div class="price-amt-row">
+            <span class="price-crossed">$12</span>
+            <span class="price-large" style="color: var(--volt-light);">$6</span>
+            <span class="price-unit">/month</span>
+          </div>
+          <div class="price-billed">Billed annually • Save 50%</div>
+
+          <div class="features-list">
+            <div class="feature-item" style="color: var(--ghost-white);">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span>Unlimited essays</span>
+            </div>
+            <div class="feature-item">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span>Style learning from unlimited docs</span>
+            </div>
+            <div class="feature-item">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span>Lab report + application modes</span>
+            </div>
+            <div class="feature-item">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span>AI detection shield mode</span>
+            </div>
+            <div class="feature-item">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span>Turnitin-safe formatting</span>
+            </div>
+            <div class="feature-item">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span>Priority generation speed</span>
+            </div>
+          </div>
+
+          <button class="price-btn btn-solid" onclick="scrollToHero()">Get Student Pro →</button>
+          <div class="price-note">Verify with .edu email for student rate</div>
+        </div>
+
+        <!-- CARD 3 -->
+        <div class="glass price-card">
+          <div class="price-badge">FOR GROUPS</div>
+          <h3>Study Group</h3>
+          <div class="price-amt-row">
+            <span class="price-large">$4</span>
+            <span class="price-unit">/student/mo</span>
+          </div>
+          <div class="price-billed">For up to 8 students together</div>
+
+          <div class="features-list">
+            <div class="feature-item">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span>Everything in Student Pro</span>
+            </div>
+            <div class="feature-item">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span>Shared style bank (learn from group)</span>
+            </div>
+            <div class="feature-item">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span>Up to 8 active student seats</span>
+            </div>
+            <div class="feature-item">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span>Assignment tracking dashboard</span>
+            </div>
+            <div class="feature-item">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span>Group performance analytics</span>
+            </div>
+          </div>
+
+          <button class="price-btn btn-ghost" onclick="scrollToHero()">Set up a group →</button>
+          <div class="price-note">Ideal for study squads & co-authoring</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 7 — FAQ -->
+  <section class="faq-sec">
+    <div class="container">
+      <div class="text-center">
+        <div class="eyebrow-large">HONEST & DIRECT ANSWERS</div>
+        <h2 class="sec-title-large" style="font-size:36px;">The questions you're actually thinking</h2>
+      </div>
+
+      <div class="faq-grid">
+        <!-- Q1 -->
+        <div class="faq-item">
+          <button class="faq-trigger" onclick="toggleFaq(this)">
+            <h4>Will my professor know I used this?</h4>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <div class="faq-content">
+            <div class="faq-inner">
+              "Your Twin writes in your style, not in AI style. That said — use your judgment. Your Twin is a drafting tool, not a cheating tool. Treat it like a smart writing partner who knows how you think. You still need to read what it writes, understand it, and make it yours."
+            </div>
+          </div>
+        </div>
+        <!-- Q2 -->
+        <div class="faq-item">
+          <button class="faq-trigger" onclick="toggleFaq(this)">
+            <h4>Will it pass AI detectors like Turnitin or GPTZero?</h4>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <div class="faq-content">
+            <div class="faq-inner">
+              "In beta testing, Twin-generated drafts passed major AI detectors significantly more often than generic AI output — because they're trained on your voice, not a general model's output patterns. But no tool can guarantee 100% on every detector every time. Our AI Detection Shield mode (Pro) is specifically tuned to reduce detection signals."
+            </div>
+          </div>
+        </div>
+        <!-- Q3 -->
+        <div class="faq-item">
+          <button class="faq-trigger" onclick="toggleFaq(this)">
+            <h4>How much of my writing does it need to learn?</h4>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <div class="faq-content">
+            <div class="faq-inner">
+              "Minimum 3 documents to get a usable style profile. 5–8 documents gets you to the point where it really sounds like you. After 10+, most users say they can't tell the difference from their own writing."
+            </div>
+          </div>
+        </div>
+        <!-- Q4 -->
+        <div class="faq-item">
+          <button class="faq-trigger" onclick="toggleFaq(this)">
+            <h4>What if I write differently for different subjects?</h4>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <div class="faq-content">
+            <div class="faq-inner">
+              "Twin supports multiple style profiles. You can have a 'Science Writing' twin and a 'Humanities' twin — trained on different sets of your work. Switch between them per task."
+            </div>
+          </div>
+        </div>
+        <!-- Q5 -->
+        <div class="faq-item">
+          <button class="faq-trigger" onclick="toggleFaq(this)">
+            <h4>Is my writing data private?</h4>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <div class="faq-content">
+            <div class="faq-inner">
+              "Yes. Your documents are used only to train your personal Twin. They're never shared with other users, never used to train shared models, and deleted when you close your account. Zero data retention option available."
+            </div>
+          </div>
+        </div>
+        <!-- Q6 -->
+        <div class="faq-item">
+          <button class="faq-trigger" onclick="toggleFaq(this)">
+            <h4>Does the free plan actually work or is it crippled to push me to Pro?</h4>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <div class="faq-content">
+            <div class="faq-inner">
+              "Free plan is genuinely useful. 3 essays and unlimited emails per month covers most students. Pro is for power users — people writing 10+ essays a month or who want the detection shield. We'd rather you trust us with a real free plan than resent us for a fake one."
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 8 — FINAL CTA -->
+  <section class="cta-sec">
+    <div class="container cta-inner">
+      <div class="live-counter" id="waitlist-pill">
+        <span></span>
+        <span id="waitlist-count" style="box-shadow:none; background:none; width:auto; height:auto; color:inherit; font-family:inherit; font-size:inherit;">3,847</span> students on the waitlist
+      </div>
+      <h2>Stop sounding like everyone else.</h2>
+      <p>Your voice is your advantage. Your Twin keeps it.</p>
+
+      <!-- CTA FORM -->
+      <div class="email-form-container" style="margin: 0 auto 32px auto;">
+        <form class="email-form" id="cta-email-form">
+          <input type="email" class="email-input" placeholder="your.name@university.edu" required id="cta-email-input">
+          <button type="submit" class="submit-btn">Claim your free Twin →</button>
+        </form>
+        <div id="cta-success" style="display: none;" class="form-success text-left">
+          <div class="success-headline">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <span>You're in. Your Twin is being prepared.</span>
+          </div>
+          <div class="success-sub">
+            <span>You're #<span class="queue-num" id="cta-queue">2491</span> on the list. Share to move up →</span>
+            <button class="copy-btn" id="cta-copy-btn">Copy Link</button>
+          </div>
+        </div>
+        <div id="cta-error" style="display: none;" class="error-msg"></div>
+      </div>
+
+      <div class="university-logos">
+        <span>MIT</span> · <span>OXFORD</span> · <span>STANFORD</span> · <span>NUS</span> · <span>UCL</span> · <span>MELBOURNE</span> · <span>MCGILL</span> · <span>EDINBURGH</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-logo">TWIN.AI / STUDENTS</div>
+        <div class="footer-links">
+          <a href="/#">← Back to main site</a>
+          <span>·</span>
+          <a href="#">Privacy</a>
+          <span>·</span>
+          <a href="#">Terms</a>
+          <span>·</span>
+          <a href="mailto:support@twin.ai">Contact</a>
+        </div>
+      </div>
+      <div class="footer-tagline">
+        "Your writing. Infinite throughput."
+      </div>
+    </div>
+  </footer>
+
+  <!-- JAVASCRIPT MECHANICS -->
+  <script>
+    // PREFERS REDUCED MOTION CHECK
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    // 1. SCROLL PROGRESS BAR
+    window.addEventListener('scroll', () => {
+      const scrollProgress = document.getElementById('scroll-progress');
+      const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
+      if (totalHeight > 0) {
+        const progress = (window.pageYOffset / totalHeight) * 100;
+        scrollProgress.style.width = `${progress}%`;
+      }
+    });
+
+    // 2. HERO STRIKETHROUGH TRIGGER
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        const strikeLine = document.getElementById('hero-strike');
+        if (strikeLine) {
+          strikeLine.style.width = "100%";
+        }
+      }, 1200);
+    });
+
+    // 3. COUNTDOWN TIMER
+    // Fix target date: 14 days from load
+    const countdownTarget = Date.now() + 14 * 24 * 60 * 60 * 1000;
+    
+    function updateCountdown() {
+      const diff = countdownTarget - Date.now();
+      if (diff <= 0) {
+        clearInterval(timerInterval);
+        return;
+      }
+      const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const s = Math.floor((diff % (1000 * 60)) / 1000);
+
+      document.getElementById('timer-days').textContent = String(d).padStart(2, '0');
+      document.getElementById('timer-hours').textContent = String(h).padStart(2, '0');
+      document.getElementById('timer-minutes').textContent = String(m).padStart(2, '0');
+      document.getElementById('timer-seconds').textContent = String(s).padStart(2, '0');
+    }
+    updateCountdown();
+    const timerInterval = setInterval(updateCountdown, 1000);
+
+    // 4. ANIMATED LIVE WAITLIST COUNTER
+    let currentWaitlist = 3847;
+    const countEl = document.getElementById('waitlist-count');
+    const pillEl = document.getElementById('waitlist-pill');
+    
+    function incrementWaitlist() {
+      if (prefersReducedMotion) return;
+      const step = Math.floor(Math.random() * 3) + 1; // 1 to 3
+      currentWaitlist += step;
+      countEl.textContent = currentWaitlist.toLocaleString();
+      
+      // Scale spring effect
+      pillEl.style.transform = "scale(1.08)";
+      setTimeout(() => {
+        pillEl.style.transform = "scale(1)";
+      }, 150);
+
+      // Schedule next update (4 to 8 seconds)
+      const nextDelay = (Math.floor(Math.random() * 5) + 4) * 1000;
+      setTimeout(incrementWaitlist, nextDelay);
+    }
+    setTimeout(incrementWaitlist, 5000);
+
+    // 5. USE CASES TABS
+    function switchTab(index) {
+      const triggers = document.querySelectorAll('.tab-trigger');
+      const panels = document.querySelectorAll('.tab-panel');
+
+      triggers.forEach((btn, idx) => {
+        if (idx === index) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+
+      panels.forEach((p, idx) => {
+        if (idx === index) {
+          p.classList.add('active');
+        } else {
+          p.classList.remove('active');
+        }
+      });
+    }
+
+    // 6. ACCORDION FAQ
+    function toggleFaq(button) {
+      const item = button.parentElement;
+      const content = item.querySelector('.faq-content');
+      const isOpen = item.classList.contains('active');
+
+      // Close all others
+      document.querySelectorAll('.faq-item').forEach(otherItem => {
+        if (otherItem !== item) {
+          otherItem.classList.remove('active');
+          otherItem.querySelector('.faq-content').style.maxHeight = '0';
+        }
+      });
+
+      if (isOpen) {
+        item.classList.remove('active');
+        content.style.maxHeight = '0';
+      } else {
+        item.classList.add('active');
+        content.style.maxHeight = content.scrollHeight + 'px';
+      }
+    }
+
+    // 7. CONFETTI GENERATOR
+    function triggerConfetti(originX, originY) {
+      if (prefersReducedMotion) return;
+      const colors = ['#7C3AED', '#A78BFA', '#00E5FF', '#FFFFFF', '#2D6EFF'];
+      const container = document.body;
+      
+      for (let i = 0; i < 30; i++) {
+        const div = document.createElement('div');
+        div.className = 'confetti';
+        div.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        div.style.left = `${originX}px`;
+        div.style.top = `${originY}px`;
+        container.appendChild(div);
+
+        // Physics variables
+        const angle = Math.random() * Math.PI * 2;
+        const velocity = Math.random() * 200 + 100; // velocity magnitude
+        const spreadX = Math.cos(angle) * velocity;
+        const spreadY = -Math.abs(Math.sin(angle) * velocity) - (Math.random() * 150 + 100); // jump upwards
+        const rotation = Math.random() * 720;
+        const duration = Math.random() * 400 + 800; // 800ms - 1200ms
+
+        let startTime = null;
+
+        function animateConfetti(timestamp) {
+          if (!startTime) startTime = timestamp;
+          const elapsed = timestamp - startTime;
+          const t = elapsed / duration;
+
+          if (t >= 1) {
+            div.remove();
+            return;
+          }
+
+          // Simple gravity-integrated flight path
+          const curX = originX + spreadX * t;
+          const curY = originY + spreadY * t + 350 * t * t; // gravity coefficient
+          const curRot = rotation * t;
+          const curOpacity = 1 - t;
+
+          div.style.transform = `translate(${curX - originX}px, ${curY - originY}px) rotate(${curRot}deg)`;
+          div.style.opacity = curOpacity;
+
+          requestAnimationFrame(animateConfetti);
+        }
+
+        requestAnimationFrame(animateConfetti);
+      }
+    }
+
+    // 8. FORM SUBMISSIONS
+    const queueTarget = Math.floor(Math.random() * 201) + 2400; // 2400-2600
+
+    function handleFormSubmit(formId, inputId, successId, errorId, queueId, copyId) {
+      const form = document.getElementById(formId);
+      if (!form) return;
+
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const input = document.getElementById(inputId);
+        const email = input.value.trim();
+        const successDiv = document.getElementById(successId);
+        const errorDiv = document.getElementById(errorId);
+
+        // Simple validation check
+        const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+        if (!isValid) {
+          input.classList.add('shake');
+          input.style.borderColor = 'rgba(239, 68, 68, 0.8)';
+          errorDiv.textContent = 'Use a valid university email to get free access';
+          errorDiv.style.display = 'flex';
+          
+          setTimeout(() => {
+            input.classList.remove('shake');
+            input.style.borderColor = '';
+          }, 400);
+          return;
+        }
+
+        errorDiv.style.display = 'none';
+        
+        // Show success state
+        form.style.display = 'none';
+        successDiv.style.display = 'flex';
+
+        // Animate referral countdown position
+        const targetQ = queueTarget;
+        const startQ = targetQ + 50;
+        let curQ = startQ;
+        const qSpan = document.getElementById(queueId);
+        qSpan.textContent = curQ;
+
+        const countdownInterval = setInterval(() => {
+          if (curQ > targetQ) {
+            curQ--;
+            qSpan.textContent = curQ;
+          } else {
+            clearInterval(countdownInterval);
+          }
+        }, 30);
+
+        // Setup Copy link behavior
+        const refLink = window.location.origin + window.location.pathname + "?ref=" + btoa(email).slice(0, 8);
+        const copyBtn = document.getElementById(copyId);
+        copyBtn.addEventListener('click', () => {
+          navigator.clipboard.writeText(refLink).then(() => {
+            copyBtn.textContent = 'Copied!';
+            setTimeout(() => {
+              copyBtn.textContent = 'Copy Link';
+            }, 2000);
+          });
+        });
+
+        // Trigger confetti burst from button center location
+        const rect = form.querySelector('.submit-btn').getBoundingClientRect();
+        const originX = rect.left + rect.width / 2 + window.scrollX;
+        const originY = rect.top + rect.height / 2 + window.scrollY;
+        triggerConfetti(originX, originY);
+      });
+    }
+
+    handleFormSubmit('hero-email-form', 'hero-email-input', 'hero-success', 'hero-error', 'hero-queue', 'hero-copy-btn');
+    handleFormSubmit('cta-email-form', 'cta-email-input', 'cta-success', 'cta-error', 'cta-queue', 'cta-copy-btn');
+
+    function scrollToHero() {
+      const element = document.getElementById('hero-email-input');
+      if (element) {
+        element.focus();
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+
+    // 9. BACKGROUND PARTICLE MESH CANVAS
+    const canvas = document.getElementById('bg-canvas');
+    const ctx = canvas.getContext('2d');
+    let animationFrameId = null;
+
+    let particles = [];
+    const maxParticles = 60;
+    const connectionDist = 120;
+    const mouseRadius = 100;
+    let mouse = { x: null, y: null };
+
+    window.addEventListener('mousemove', (e) => {
+      mouse.x = e.clientX;
+      mouse.y = e.clientY;
+    });
+
+    window.addEventListener('mouseleave', () => {
+      mouse.x = null;
+      mouse.y = null;
+    });
+
+    function initParticles() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      particles = [];
+
+      for (let i = 0; i < maxParticles; i++) {
+        particles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          vx: (Math.random() - 0.5) * 0.4,
+          vy: (Math.random() - 0.5) * 0.4,
+          r: Math.random() * 1.5 + 1
+        });
+      }
+    }
+
+    function drawParticles() {
+      if (prefersReducedMotion) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        return;
+      }
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        
+        // Update positions
+        p.x += p.vx;
+        p.y += p.vy;
+
+        // Wrap around boundaries
+        if (p.x < 0) p.x = canvas.width;
+        if (p.x > canvas.width) p.x = 0;
+        if (p.y < 0) p.y = canvas.height;
+        if (p.y > canvas.height) p.y = 0;
+
+        // Mouse repulsion
+        if (mouse.x !== null && mouse.y !== null) {
+          const dx = p.x - mouse.x;
+          const dy = p.y - mouse.y;
+          const dist = Math.hypot(dx, dy);
+          if (dist < mouseRadius) {
+            const force = (mouseRadius - dist) / mouseRadius;
+            const angle = Math.atan2(dy, dx);
+            p.x += Math.cos(angle) * force * 1.5;
+            p.y += Math.sin(angle) * force * 1.5;
+          }
+        }
+
+        // Draw particle
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(124, 90, 250, 0.35)';
+        ctx.fill();
+
+        // Connect particles
+        for (let j = i + 1; j < particles.length; j++) {
+          const p2 = particles[j];
+          const dist = Math.hypot(p.x - p2.x, p.y - p2.y);
+          if (dist < connectionDist) {
+            const opacity = (connectionDist - dist) / connectionDist * 0.15;
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.strokeStyle = `rgba(124, 90, 250, ${opacity})`;
+            ctx.lineWidth = 0.8;
+            ctx.stroke();
+          }
+        }
+      }
+
+      animationFrameId = requestAnimationFrame(drawParticles);
+    }
+
+    window.addEventListener('resize', () => {
+      initParticles();
+    });
+
+    initParticles();
+    if (!prefersReducedMotion) {
+      drawParticles();
+    }
+
+    // 10. FLOATING AMBIENT WORD FRAGMENTS
+    const fragmentsList = [
+      "therefore...", "in conclusion", "building upon", "my analysis",
+      "to summarize", "it can be argued", "evidence suggests", "as demonstrated"
+    ];
+
+    function initWordFragments() {
+      if (prefersReducedMotion || window.innerWidth < 768) return;
+      const layer = document.getElementById('words-layer');
+      layer.innerHTML = '';
+
+      fragmentsList.forEach((text, idx) => {
+        const el = document.createElement('div');
+        el.className = 'word-fragment';
+        el.textContent = text;
+        
+        // Random starting positions & speeds
+        let x = Math.random() * window.innerWidth;
+        let y = Math.random() * window.innerHeight;
+        const speedX = (Math.random() - 0.5) * 0.25 - 0.05;
+        const speedY = (Math.random() - 0.5) * 0.25 - 0.05;
+
+        el.style.transform = `translate(${x}px, ${y}px)`;
+        layer.appendChild(el);
+
+        function floatWord() {
+          x += speedX;
+          y += speedY;
+
+          // Wrap logic
+          if (x < -150) x = window.innerWidth + 50;
+          if (x > window.innerWidth + 150) x = -100;
+          if (y < -50) y = window.innerHeight + 50;
+          if (y > window.innerHeight + 100) y = -50;
+
+          el.style.transform = `translate(${x}px, ${y}px)`;
+          requestAnimationFrame(floatWord);
+        }
+        requestAnimationFrame(floatWord);
+      });
+    }
+    // ==========================================================================
+    // COLD OUTREACH ENGINE JAVASCRIPT
+    // ==========================================================================
+    const OUTREACH_DATA = {
+      internship: {
+        companyLabel: "Company or Organization",
+        companyPlaceholder: "e.g. Stripe, Google DeepMind, local architecture firm...",
+        descriptionLabel: "Describe the role or opportunity",
+        descriptionPlaceholder: "Summer 2025 product design internship. 12 weeks, SF office. Looking for someone who can own end-to-end design for their payments dashboard...",
+        strengthLabel: "Your strongest relevant angle",
+        strengthPlaceholder: "Built a checkout flow redesign that cut drop-off by 31% in my last project",
+        variants: [
+          {
+            subject: "Product design internship — quick question",
+            body: "Hi [Name],\n\nI'll keep this short. I'm a [Role] and I've been following [Company]'s design work for about two years — specifically the invoicing redesign from last year, which handled a genuinely hard information architecture problem in a way I haven't seen matched.\n\n[Referral]I [Strength] last semester. Not a [Company]-scale problem, but the thinking process was similar.\n\nI'm applying for your summer internship through the official portal, but I wanted to reach out directly in case there was room to talk before the process moves forward.\n\nHappy to share the case study if it's useful.\n\nBest,\n[YourName]"
+          },
+          {
+            subject: "Summer internship — product design, [Role]",
+            body: "Hi [Name],\n\nI'm applying for the summer product design internship and wanted to send a note alongside the formal application.\n\nI'm a [Role]. [Referral]The project I'd point to is a checkout redesign I ran independently — [Strength], which I'm more proud of than my grade point average, honestly.\n\nWhat draws me to [Company] specifically is that your design problems are unusually hard. The API documentation UX, the dashboard for non-technical founders — these aren't solved by making things pretty. That's the kind of problem I want to work on.\n\nLet me know if a portfolio would be helpful.\n\nBest,\n[YourName]"
+          }
+        ]
+      },
+      "invite-only": {
+        companyLabel: "Company or Organization",
+        companyPlaceholder: "e.g. Y Combinator Startup School, TED Fellows, Andreessen residency...",
+        descriptionLabel: "Describe the role or opportunity",
+        descriptionPlaceholder: "Closed workshop on AI safety research for 20 selected participants. Only open to referrals from past attendees or faculty...",
+        strengthLabel: "Your strongest relevant angle",
+        strengthPlaceholder: "Published a paper on transformer efficiency cited 40+ times",
+        variants: [
+          {
+            subject: "[Company] — late application",
+            body: "Hi [Name],\n\nI know the application window has closed, so I'll make this worth reading quickly.\n\nI'm building a small tool for independent researchers to manage literature reviews — currently at 340 users, no funding, entirely evenings and weekends while finishing my [Role]. [Referral]The reason I want to be in the room at [Company] is that the problems I'm hitting now are exactly the ones your curriculum covers: when to stop building and start selling, and how to decide if this is actually a company.\n\nSpecifically, I [Strength]. I'd rather hear that from people who've seen it fail than figure it out by failing myself.\n\nIf there's any flexibility on late additions, I'd genuinely make good use of the spot.\n\nBest,\n[YourName]"
+          },
+          {
+            subject: "[Company] — one late application",
+            body: "Hi [Name],\n\n[Referral]Reaching out directly was worth trying even after the deadline.\n\nI'm finishing my [Role] while running a research tool at 340 users. The traction is there. What I'm missing is the framework for what to do with it — specifically in regard to how I [Strength].\n\nThat's specifically why [Company] matters to me right now — not for the network, but for the curriculum at a moment when I can actually use it.\n\nIf there's a waitlist or any path for late consideration, I'm on it.\n\nBest,\n[YourName]"
+          }
+        ]
+      },
+      "job-opportunity": {
+        companyLabel: "Company or Organization",
+        companyPlaceholder: "e.g. McKinsey, Series B startup, freelance client...",
+        descriptionLabel: "Describe the role or opportunity",
+        descriptionPlaceholder: "Senior PM role, B2B SaaS, Series C company, hybrid London. They want someone who's scaled a product from 0 to enterprise...",
+        strengthLabel: "Your strongest relevant angle",
+        strengthPlaceholder: "Took a B2B product from 50 to 400 enterprise clients in 18 months",
+        variants: [
+          {
+            subject: "Senior PM role — worth a conversation?",
+            body: "Hi [Name],\n\nI noticed the Senior PM role on your site and wanted to reach out before going through the portal.\n\nQuick context: I'm a [Role]. [Referral]The scaling work is what I enjoy most — the moment where \"make it work\" becomes \"make it work for everyone,\" and the decisions that entails.\n\nI [Strength]. Your Series C announcement mentioned expansion into mid-market. That's exactly the transition I've done before. I don't think that's a coincidence in terms of timing.\n\nWould it make sense to talk for 20 minutes before the formal process?\n\nBest,\n[YourName]"
+          },
+          {
+            subject: "PM role — direct outreach, [Role]",
+            body: "Hi [Name],\n\nApplying through the portal as well, but I wanted to send a note directly.\n\nI'm a [Role]. [Referral]The stat I'd lead with: I [Strength]. This involved rebuilding the onboarding flow, repricing three tiers, and killing a feature that 60% of users said they wanted but 4% actually used.\n\nYour mid-market push post-Series C at [Company] is the type of problem I've solved before. I'd like to talk if the timing makes sense.\n\nBest,\n[YourName]"
+          }
+        ]
+      },
+      networking: {
+        companyLabel: "Company or Organization",
+        companyPlaceholder: "e.g. Sarah Chen — VP Product at Figma",
+        descriptionLabel: "Describe the role or opportunity",
+        descriptionPlaceholder: "Want to ask for a 15-min call about their career transition from academia to tech...",
+        strengthLabel: "Your strongest relevant angle",
+        strengthPlaceholder: "Also transitioned from a PhD to a PM role — went through exactly what they did",
+        variants: [
+          {
+            subject: "Quick question about your transition",
+            body: "Hi [Name],\n\nI came across your work at [Company] while researching product leadership, and your path is almost exactly the transition I'm trying to understand right now.\n\nI'm currently a [Role]. [Referral]Most advice I get is generic, but yours isn't, especially since I [Strength].\n\nWould you be open to a 15-minute call at some point in the next few weeks? No agenda beyond one or two specific questions about how you made the shift.\n\nHappy to work around your schedule completely.\n\nBest,\n[YourName]"
+          },
+          {
+            subject: "15 minutes — PhD to PM transition",
+            body: "Hi [Name],\n\nYour name came up twice in conversations I've had with people who made the move into product management. [Referral]That's usually a signal worth following up on.\n\nI'm a [Role] trying to figure out the same transition you made. I have specific questions, especially because I [Strength].\n\nWould a 15-minute call be possible? I'll keep it to exactly that.\n\nBest,\n[YourName]"
+          }
+        ]
+      },
+      "research-lab": {
+        companyLabel: "Professor or Lab",
+        companyPlaceholder: "e.g. Prof. Ananya Krishnan, MIT Media Lab...",
+        descriptionLabel: "Describe the research or opportunity",
+        descriptionPlaceholder: "Looking for undergrad RAs to help with NLP dataset annotation and model evaluation...",
+        strengthLabel: "Your strongest relevant angle",
+        strengthPlaceholder: "Wrote my thesis on RLHF alignment, familiar with their recent ICML paper",
+        variants: [
+          {
+            subject: "Undergraduate RA interest — RLHF work",
+            body: "Hi [Name],\n\nI've been following your lab's work on RLHF alignment since your ICML paper — particularly the section on reward model collapse under distribution shift, which connects to something I ran into in my own work.\n\nI'm currently a [Role]. [Referral]I [Strength], which means I'm already familiar with the tooling and failure modes your lab works with.\n\nI'd like to ask if there are any RA positions available for next semester, or if a conversation about your current projects would be possible.\n\nBest,\n[YourName]"
+          },
+          {
+            subject: "RA position inquiry — NLP / alignment",
+            body: "Hi [Name],\n\nI'm writing to ask about RA opportunities in your lab, but I want to give you a specific reason to read past that sentence.\n\nI am currently a [Role]. [Referral]My key focus aligns with yours: I [Strength]. While working on this, I kept running into the reward hacking problem your recent papers address, so I have read them closely enough to have specific questions I'd genuinely like to discuss.\n\nIf there's any RA capacity next semester, I'd appreciate the chance to talk.\n\nBest,\n[YourName]"
+          }
+        ]
+      },
+      "event-access": {
+        companyLabel: "Event Name",
+        companyPlaceholder: "e.g. NeurIPS 2025, SXSW, local design summit...",
+        descriptionLabel: "Describe the event or opportunity",
+        descriptionPlaceholder: "Invite-only summit for 50 founders. Hosted by First Round Capital. Application closed but they sometimes take late requests...",
+        strengthLabel: "Your strongest relevant angle",
+        strengthPlaceholder: "Running a startup in the exact space the summit is focused on",
+        variants: [
+          {
+            subject: "[Company] — late registration or waitlist?",
+            body: "Hi [Name],\n\nI'm reaching out about [Company] registration. I understand spaces are extremely limited, so I'll be direct about why I'm asking.\n\nI am currently a [Role]. [Referral]I [Strength], which I assume puts me in a different category than a general attendee request — but I haven't been able to get through the registration system to confirm this.\n\nIs there a waitlist, or a path for accepted presenters who missed the registration window?\n\nBest,\n[YourName]"
+          },
+          {
+            subject: "Late attendance inquiry — [Company]",
+            body: "Hi [Name],\n\n[Referral]I wanted to ask directly if there is any flexibility on attendee capacity for the upcoming summit.\n\nI am currently a [Role]. I [Strength], and I've been following your curated speaker line-up, which is remarkably tight this year.\n\nI know the deadline has passed, but if a spot opens up due to cancellations, I'd make very active use of it.\n\nBest,\n[YourName]"
+          }
+        ]
+      }
+    };
+
+    let outreachState = {
+      type: "internship",
+      tone: "confident",
+      hasReferral: false,
+      variant: 0,
+      isGenerating: false,
+      voiceSynced: false,
+      isModalOpen: false
+    };
+
+    // DOM cache
+    const pills = document.querySelectorAll(".outreach-pill");
+    const toneBtns = document.querySelectorAll(".tone-btn");
+    const inputCompany = document.getElementById("input-company");
+    const inputDesc = document.getElementById("input-description");
+    const inputRole = document.getElementById("input-role");
+    const inputStrength = document.getElementById("input-strength");
+    const toggleReferral = document.getElementById("toggle-referral");
+    const referralContainer = document.getElementById("referral-input-container");
+    const inputReferral = document.getElementById("input-referral");
+    
+    const labelCompany = document.getElementById("lbl-company");
+    const labelDesc = document.getElementById("lbl-description");
+    const labelStrength = document.getElementById("lbl-strength");
+    const warnDesc = document.getElementById("warn-description");
+    const countDesc = document.getElementById("count-description");
+    
+    const btnGenerate = document.getElementById("btn-generate-outreach");
+    const placeholderView = document.getElementById("draft-placeholder-view");
+    const outputView = document.getElementById("draft-output-view");
+    const draftSubject = document.getElementById("draft-subject");
+    const draftBody = document.getElementById("draft-body");
+    const dividerFill = document.getElementById("draft-divider-fill");
+    const draftActions = document.getElementById("draft-actions");
+    const badgeWordLimit = document.getElementById("badge-word-limit");
+    const badgeSpam = document.getElementById("badge-spam");
+    const displayWords = document.getElementById("metrics-words-display");
+    
+    const btnCopy = document.getElementById("btn-copy");
+    const txtCopy = document.getElementById("txt-copy");
+    const btnGmail = document.getElementById("btn-gmail");
+    const btnRegen = document.getElementById("btn-regenerate");
+
+    const modal = document.getElementById("upload-style-modal");
+    const btnOpenModal = document.getElementById("btn-open-upload-modal");
+    const btnCloseModal = document.getElementById("btn-close-modal");
+    const btnSkipModal = document.getElementById("btn-skip-modal");
+    const btnSubmitStyle = document.getElementById("btn-submit-style");
+    const textStyleSample = document.getElementById("text-style-sample");
+    const modalProgressContainer = document.getElementById("modal-progress-container");
+    const modalProgressBar = document.getElementById("modal-progress-bar");
+    const modalStatusMsg = document.getElementById("modal-status-msg");
+    const modalPercentage = document.getElementById("modal-percentage-txt");
+    const modalTitleText = document.getElementById("modal-title-text");
+    const modalSubText = document.getElementById("modal-sub-text");
+    
+    const profileDot = document.getElementById("profile-status-dot");
+    const profileLbl = document.getElementById("profile-status-lbl");
+    const profileSub = document.getElementById("profile-subtext");
+
+    // Initialize labels
+    function updateLabelsAndPlaceholders() {
+      const data = OUTREACH_DATA[outreachState.type];
+      if (!data) return;
+      
+      labelCompany.textContent = data.companyLabel;
+      inputCompany.placeholder = data.companyPlaceholder;
+      labelDesc.textContent = data.descriptionLabel;
+      inputDesc.placeholder = data.descriptionPlaceholder;
+      labelStrength.textContent = data.strengthLabel;
+      inputStrength.placeholder = data.strengthPlaceholder;
+      
+      validateFields();
+    }
+
+    function validateFields() {
+      const coVal = inputCompany.value.trim();
+      const deVal = inputDesc.value.trim();
+      
+      // Update has-content border styles
+      if (coVal.length > 0) inputCompany.classList.add("has-content");
+      else inputCompany.classList.remove("has-content");
+      
+      if (deVal.length > 0) inputDesc.classList.add("has-content");
+      else inputDesc.classList.remove("has-content");
+      
+      if (inputRole.value.trim().length > 0) inputRole.classList.add("has-content");
+      else inputRole.classList.remove("has-content");
+      
+      if (inputStrength.value.trim().length > 0) inputStrength.classList.add("has-content");
+      else inputStrength.classList.remove("has-content");
+      
+      if (inputReferral.value.trim().length > 0) inputReferral.classList.add("has-content");
+      else inputReferral.classList.remove("has-content");
+      
+      // Update description char count
+      countDesc.textContent = `${deVal.length}/400`;
+      if (deVal.length > 350) {
+        countDesc.className = "char-count warning";
+      } else if (deVal.length > 400) {
+        countDesc.className = "char-count danger";
+      } else {
+        countDesc.className = "char-count";
+      }
+      
+      const isValid = coVal.length >= 2 && deVal.length >= 10;
+      if (isValid) {
+        warnDesc.textContent = "✓ Context valid";
+        warnDesc.style.color = "#10b981";
+        btnGenerate.disabled = false;
+        btnGenerate.classList.add("enabled");
+      } else {
+        warnDesc.textContent = "Min 10 characters required";
+        warnDesc.style.color = "";
+        btnGenerate.disabled = true;
+        btnGenerate.classList.remove("enabled");
+      }
+    }
+
+    // Event listeners for input validation
+    [inputCompany, inputDesc, inputRole, inputStrength, inputReferral].forEach(elem => {
+      if (elem) elem.addEventListener("input", validateFields);
+    });
+
+    // Pill Selector
+    pills.forEach(pill => {
+      pill.addEventListener("click", () => {
+        pills.forEach(p => p.classList.remove("active"));
+        pill.classList.add("active");
+        outreachState.type = pill.getAttribute("data-type");
+        updateLabelsAndPlaceholders();
+      });
+    });
+
+    // Tone Selector
+    toneBtns.forEach(btn => {
+      btn.addEventListener("click", () => {
+        toneBtns.forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        outreachState.tone = btn.getAttribute("data-tone");
+      });
+    });
+
+    // Referral Toggle
+    toggleReferral.addEventListener("change", (e) => {
+      outreachState.hasReferral = e.target.checked;
+      if (outreachState.hasReferral) {
+        referralContainer.classList.add("expanded");
+      } else {
+        referralContainer.classList.remove("expanded");
+      }
+    });
+
+    // Modal behavior
+    btnOpenModal.addEventListener("click", () => {
+      modal.classList.add("open");
+    });
+    const closeModal = () => {
+      modal.classList.remove("open");
+      // Reset modal state in case they aborted during progress
+      textStyleSample.style.display = "block";
+      modalTitleText.style.display = "block";
+      modalSubText.style.display = "block";
+      btnSubmitStyle.style.display = "block";
+      btnSkipModal.style.display = "block";
+      modalProgressContainer.style.display = "none";
+      textStyleSample.value = "";
+      btnSubmitStyle.disabled = true;
+    };
+    if (btnCloseModal) btnCloseModal.addEventListener("click", closeModal);
+    if (btnSkipModal) btnSkipModal.addEventListener("click", closeModal);
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) closeModal();
+    });
+
+    textStyleSample.addEventListener("input", () => {
+      const words = textStyleSample.value.trim().split(/\s+/).filter(Boolean);
+      btnSubmitStyle.disabled = words.length < 10; // minimum word sample size
+    });
+
+    btnSubmitStyle.addEventListener("click", () => {
+      textStyleSample.style.display = "none";
+      modalTitleText.style.display = "none";
+      modalSubText.style.display = "none";
+      btnSubmitStyle.style.display = "none";
+      btnSkipModal.style.display = "none";
+      modalProgressContainer.style.display = "block";
+      
+      let progress = 0;
+      const interval = setInterval(() => {
+        progress += 4;
+        if (progress > 100) progress = 100;
+        
+        modalProgressBar.style.width = `${progress}%`;
+        modalPercentage.textContent = `${progress}%`;
+        
+        if (progress < 25) {
+          modalStatusMsg.textContent = "Analyzing punctuation footprint...";
+        } else if (progress < 50) {
+          modalStatusMsg.textContent = "Measuring sentence length variance...";
+        } else if (progress < 75) {
+          modalStatusMsg.textContent = "Extracting transition vocabulary...";
+        } else {
+          modalStatusMsg.textContent = "Calibrating tone sliders...";
+        }
+        
+        if (progress === 100) {
+          clearInterval(interval);
+          setTimeout(() => {
+            outreachState.voiceSynced = true;
+            profileDot.className = "status-dot active";
+            profileLbl.className = "status-lbl active";
+            profileLbl.textContent = "VOICE SYNCED";
+            profileSub.textContent = "Your Twin is now active";
+            closeModal();
+          }, 300);
+        }
+      }, 60);
+    });
+
+    // Typewriter and Generation Engine
+    function resolveTemplate(subject, body) {
+      const company = inputCompany.value.trim();
+      const role = inputRole.value.trim() || "Student";
+      const strength = inputStrength.value.trim() || "love solving tricky problems";
+      
+      let refText = "";
+      if (outreachState.hasReferral && inputReferral.value.trim()) {
+        refText = `Since ${inputReferral.value.trim()} suggested I reach out to you directly, `;
+      }
+      
+      let s = subject
+        .replace(/\[Company\]/g, company)
+        .replace(/\[Role\]/g, role);
+        
+      let b = body
+        .replace(/\[Company\]/g, company)
+        .replace(/\[Role\]/g, role)
+        .replace(/\[Strength\]/g, strength)
+        .replace(/\[Referral\]/g, refText)
+        .replace(/\[Name\]/g, company.split(" ")[0])
+        .replace(/\[YourName\]/g, outreachState.voiceSynced ? "Your Twin" : "Computer Science student");
+        
+      // Tone adjustments
+      if (outreachState.tone === "humble") {
+        b = b.replace(/I'll keep this short./g, "I hope you don't mind the direct message.");
+        b = b.replace(/I know the application window has closed, so I'll make this worth reading quickly./g, "I understand you are incredibly busy, so I will get straight to the point.");
+      } else if (outreachState.tone === "short") {
+        b = b.replace(/I'll keep this short.\n\n/g, "");
+        b = b.replace(/I'm applying for your summer internship through the official portal, but I wanted to reach out directly in case there was room to talk before the process moves forward./g, "I've applied online, but wanted to connect directly.");
+      }
+      
+      return { subject: s, body: b };
+    }
+
+    let activeTypewriter = null;
+
+    function runGeneration() {
+      if (outreachState.isGenerating) return;
+      outreachState.isGenerating = true;
+      
+      const autosaveIndicator = document.getElementById("autosave-indicator");
+      if (autosaveIndicator) {
+        autosaveIndicator.style.opacity = "0";
+      }
+      
+      // Reset edit modes and active draft reference
+      draftSubject.contentEditable = "false";
+      draftBody.contentEditable = "false";
+      activeDraftId = null;
+      if (btnSaveAsNew) btnSaveAsNew.style.display = "none";
+      if (txtSaveDraft) txtSaveDraft.textContent = "Save Draft";
+      switchToTab("editor");
+      
+      // Pulse button once
+      btnGenerate.classList.add("pulse");
+      btnGenerate.classList.add("loading");
+      btnGenerate.disabled = true;
+      
+      setTimeout(() => {
+        btnGenerate.classList.remove("pulse");
+      }, 400);
+
+      const config = OUTREACH_DATA[outreachState.type];
+      const variant = config.variants[outreachState.variant];
+      const { subject, body } = resolveTemplate(variant.subject, variant.body);
+
+      // Hide placeholder, show draft block with zero opacity
+      placeholderView.style.display = "none";
+      outputView.classList.add("visible");
+      outputView.classList.remove("glitching");
+      
+      draftSubject.innerHTML = "";
+      draftBody.innerHTML = "";
+      dividerFill.style.width = "0%";
+      draftActions.classList.remove("fade-in");
+      badgeWordLimit.classList.remove("pop-in");
+      badgeSpam.classList.remove("pop-in");
+      displayWords.classList.remove("visible");
+
+      // Character typewriter sequence
+      let sIdx = 0;
+      let bIdx = 0;
+      
+      const typeSpeed = prefersReducedMotion ? 1 : 12;
+
+      function typeSubject() {
+        if (sIdx < subject.length) {
+          draftSubject.textContent += subject[sIdx];
+          sIdx++;
+          setTimeout(typeSubject, typeSpeed);
+        } else {
+          // Draw line
+          dividerFill.style.width = "100%";
+          setTimeout(typeBody, 350);
+        }
+      }
+
+      function typeBody() {
+        draftBody.innerHTML = "";
+        const cursor = document.createElement("span");
+        cursor.className = "typing-cursor";
+        draftBody.appendChild(cursor);
+        
+        function typeChar() {
+          if (bIdx < body.length) {
+            cursor.remove();
+            draftBody.innerHTML += body[bIdx];
+            draftBody.appendChild(cursor);
+            bIdx++;
+            setTimeout(typeChar, typeSpeed);
+          } else {
+            // Completed body
+            cursor.remove();
+            finishGeneration();
+          }
+        }
+        typeChar();
+      }
+
+      function finishGeneration() {
+        outreachState.isGenerating = false;
+        btnGenerate.classList.remove("loading");
+        btnGenerate.disabled = false;
+        
+        draftActions.classList.add("fade-in");
+        
+        // Count words
+        const wordsCount = body.trim().split(/\s+/).length;
+        displayWords.textContent = `${wordsCount} words | ~1 min read`;
+        displayWords.classList.add("visible");
+        
+        // Badges pop-in
+        if (wordsCount <= 200) {
+          badgeWordLimit.className = "metric-badge green pop-in";
+          badgeWordLimit.textContent = "Under 200 words";
+        } else if (wordsCount <= 250) {
+          badgeWordLimit.className = "metric-badge amber pop-in";
+          badgeWordLimit.textContent = "Compact length";
+        } else {
+          badgeWordLimit.className = "metric-badge red pop-in";
+          badgeWordLimit.textContent = "⚠ Too long — consider trimming";
+        }
+        
+        badgeSpam.className = "metric-badge green pop-in";
+        badgeSpam.style.transitionDelay = "150ms";
+        badgeSpam.textContent = "Spam check passed";
+
+        // Make elements content editable so students can edit directly
+        draftSubject.contentEditable = "true";
+        draftBody.contentEditable = "true";
+      }
+
+      setTimeout(typeSubject, 400);
+    }
+
+    btnGenerate.addEventListener("click", runGeneration);
+
+    // Regenerate
+    btnRegen.addEventListener("click", () => {
+      outputView.classList.add("glitching");
+      outreachState.variant = outreachState.variant === 0 ? 1 : 0;
+      setTimeout(() => {
+        runGeneration();
+      }, 180);
+    });
+
+    // Copy to clipboard
+    btnCopy.addEventListener("click", () => {
+      const subjectText = draftSubject.textContent;
+      const bodyText = draftBody.textContent;
+      const combined = `Subject: ${subjectText}\n\n${bodyText}`;
+      
+      navigator.clipboard.writeText(combined).then(() => {
+        txtCopy.textContent = "✓ Copied!";
+        setTimeout(() => {
+          txtCopy.textContent = "Copy email";
+        }, 2000);
+      });
+    });
+
+    // Gmail compose
+    btnGmail.addEventListener("click", () => {
+      const subjectText = draftSubject.textContent;
+      const bodyText = draftBody.textContent;
+      const url = `https://mail.google.com/mail/?view=cm&fs=1&su=${encodeURIComponent(subjectText)}&body=${encodeURIComponent(bodyText)}`;
+      window.open(url, "_blank");
+    });
+
+    // === SAVED DRAFTS SYSTEM FOR STUDENT PAGE ===
+    let activeDraftId = null;
+    const tabActive = document.getElementById("tab-active-draft");
+    const tabSaved = document.getElementById("tab-saved-drafts");
+    const savedCountDisp = document.getElementById("saved-drafts-count");
+    const savedView = document.getElementById("saved-drafts-view");
+    const savedList = document.getElementById("saved-drafts-list");
+    const btnSaveDraft = document.getElementById("btn-save-draft");
+    const btnSaveAsNew = document.getElementById("btn-save-as-new");
+    const txtSaveDraft = document.getElementById("txt-save-draft");
+
+    // Load drafts from shared localStorage
+    function getSavedDrafts() {
+      try {
+        const stored = localStorage.getItem("twin_saved_drafts");
+        return stored ? JSON.parse(stored) : [];
+      } catch (e) {
+        console.error("Failed to load saved drafts", e);
+        return [];
+      }
+    }
+
+    function saveSavedDrafts(drafts) {
+      try {
+        localStorage.setItem("twin_saved_drafts", JSON.stringify(drafts));
+        window.dispatchEvent(new Event("storage"));
+      } catch (e) {
+        console.error("Failed to save drafts", e);
+      }
+    }
+
+    function updateSavedDraftsCount() {
+      const drafts = getSavedDrafts();
+      if (savedCountDisp) {
+        savedCountDisp.textContent = drafts.length;
+      }
+    }
+
+    // Switch between Active Draft and Saved Drafts tabs
+    function switchToTab(mode) {
+      if (!tabActive || !tabSaved) return;
+      if (mode === "saved") {
+        tabActive.classList.remove("active");
+        tabActive.style.background = "transparent";
+        tabActive.style.color = "#7A85A3";
+        tabActive.style.border = "1px solid transparent";
+
+        tabSaved.classList.add("active");
+        tabSaved.style.background = "rgba(124,58,237,0.15)";
+        tabSaved.style.color = "rgb(167,139,250)";
+        tabSaved.style.border = "1px solid rgba(124,58,237,0.2)";
+
+        placeholderView.style.display = "none";
+        outputView.style.display = "none";
+        savedView.style.display = "flex";
+
+        renderSavedDraftsList();
+      } else {
+        tabSaved.classList.remove("active");
+        tabSaved.style.background = "transparent";
+        tabSaved.style.color = "#7A85A3";
+        tabSaved.style.border = "1px solid transparent";
+
+        tabActive.classList.add("active");
+        tabActive.style.background = "rgba(124,58,237,0.15)";
+        tabActive.style.color = "rgb(167,139,250)";
+        tabActive.style.border = "1px solid rgba(124,58,237,0.2)";
+
+        savedView.style.display = "none";
+        if (outreachState.isGenerating || draftSubject.textContent.trim()) {
+          outputView.style.display = "block";
+          placeholderView.style.display = "none";
+        } else {
+          outputView.style.display = "none";
+          placeholderView.style.display = "flex";
+        }
+      }
+    }
+
+    if (tabActive) tabActive.addEventListener("click", () => switchToTab("editor"));
+    if (tabSaved) tabSaved.addEventListener("click", () => switchToTab("saved"));
+
+    // Render list items dynamically
+    function renderSavedDraftsList() {
+      if (!savedList) return;
+      const drafts = getSavedDrafts();
+      savedList.innerHTML = "";
+
+      if (drafts.length === 0) {
+        savedList.innerHTML = `
+          <div style="text-align: center; padding: 32px 16px; color: #7A85A3;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin: 0 auto 12px; opacity: 0.3;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+            <div style="font-size: 13px; font-weight: 500; margin-bottom: 4px;">No saved drafts yet</div>
+            <div style="font-size: 10px; font-family: monospace; max-width: 200px; margin: 0 auto; line-height: 1.5;">Generate an outreach email and click "Save Draft" to see it here.</div>
+          </div>
+        `;
+        return;
+      }
+
+      drafts.forEach(draft => {
+        const item = document.createElement("div");
+        item.style.cssText = "padding: 12px; border-radius: 8px; background: rgba(5,8,16,0.4); border: 1px solid rgba(255,255,255,0.05); cursor: pointer; position: relative; transition: all 0.2s; text-align: left;";
+        item.className = "saved-draft-item";
+        
+        // Hover effects
+        item.addEventListener("mouseenter", () => {
+          item.style.borderColor = "rgba(124,58,237,0.3)";
+          item.style.background = "rgba(5,8,16,0.6)";
+        });
+        item.addEventListener("mouseleave", () => {
+          item.style.borderColor = "rgba(255,255,255,0.05)";
+          item.style.background = "rgba(5,8,16,0.4)";
+        });
+
+        const date = new Date(draft.timestamp);
+        const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const dayStr = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+
+        item.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <span style="font-family: monospace; font-size: 8px; font-weight: bold; text-transform: uppercase; padding: 2px 6px; border-radius: 4px; background: rgba(124,58,237,0.1); color: rgb(167,139,250); border: 1px solid rgba(124,58,237,0.15);">
+              ${(draft.selectedType || "outreach").replace("-", " ")}
+            </span>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-family: monospace; font-size: 8px; color: #7A85A3;">
+                ${dayStr} at ${timeStr}
+              </span>
+              <button class="delete-draft-btn" data-id="${draft.id}" style="background: transparent; border: none; color: #7A85A3; cursor: pointer; padding: 2px; transition: color 0.2s;" title="Delete draft">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              </button>
+            </div>
+          </div>
+          <div style="font-size: 11px; font-weight: 500; color: #E8EEFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px;">
+            ${draft.company ? `${draft.company} — ` : ""}${draft.subject}
+          </div>
+          <div style="font-size: 10px; color: #7A85A3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4;">
+            ${draft.body}
+          </div>
+          <div class="load-indicator" style="margin-top: 6px; font-family: monospace; font-size: 8px; color: #00E5FF; text-align: right; opacity: 0; transition: opacity 0.2s;">
+            Load draft →
+          </div>
+        `;
+
+        // Click to load
+        item.addEventListener("click", (e) => {
+          if (e.target.closest(".delete-draft-btn")) return;
+          loadDraft(draft);
+        });
+
+        // Hover style for load indicator
+        item.addEventListener("mouseenter", () => {
+          const indicator = item.querySelector(".load-indicator");
+          if (indicator) indicator.style.opacity = "1";
+        });
+        item.addEventListener("mouseleave", () => {
+          const indicator = item.querySelector(".load-indicator");
+          if (indicator) indicator.style.opacity = "0";
+        });
+
+        // Delete button listener
+        const delBtn = item.querySelector(".delete-draft-btn");
+        if (delBtn) {
+          delBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            deleteDraft(draft.id);
+          });
+        }
+
+        savedList.appendChild(item);
+      });
+    }
+
+    // Save current draft
+    function saveCurrentDraft() {
+      const subj = draftSubject.textContent.trim();
+      const bdy = draftBody.innerText.trim();
+      if (!subj && !bdy) return;
+
+      const drafts = getSavedDrafts();
+      const currentInputs = {
+        company: inputCompany.value.trim(),
+        description: inputDesc.value.trim(),
+        role: inputRole.value.trim(),
+        strength: inputStrength.value.trim(),
+        tone: outreachState.tone,
+        hasReferral: outreachState.hasReferral,
+        referralText: inputReferral.value.trim(),
+        selectedType: outreachState.type
+      };
+
+      if (activeDraftId) {
+        // Update existing draft
+        const updated = drafts.map(draft => {
+          if (draft.id === activeDraftId) {
+            return {
+              ...draft,
+              subject: subj,
+              body: bdy,
+              ...currentInputs,
+              timestamp: Date.now()
+            };
+          }
+          return draft;
+        });
+        saveSavedDrafts(updated);
+      } else {
+        // Save new
+        const newId = "draft_" + Date.now();
+        const newDraft = {
+          id: newId,
+          subject: subj,
+          body: bdy,
+          ...currentInputs,
+          timestamp: Date.now()
+        };
+        drafts.unshift(newDraft);
+        saveSavedDrafts(drafts);
+        activeDraftId = newId;
+        if (btnSaveAsNew) btnSaveAsNew.style.display = "inline-flex";
+      }
+
+      updateSavedDraftsCount();
+      if (txtSaveDraft) txtSaveDraft.textContent = "Saved!";
+      setTimeout(() => {
+        if (txtSaveDraft) txtSaveDraft.textContent = activeDraftId ? "Update Draft" : "Save Draft";
+      }, 2000);
+    }
+
+    function saveCurrentAsNew() {
+      const subj = draftSubject.textContent.trim();
+      const bdy = draftBody.innerText.trim();
+      if (!subj && !bdy) return;
+
+      const drafts = getSavedDrafts();
+      const currentInputs = {
+        company: inputCompany.value.trim(),
+        description: inputDesc.value.trim(),
+        role: inputRole.value.trim(),
+        strength: inputStrength.value.trim(),
+        tone: outreachState.tone,
+        hasReferral: outreachState.hasReferral,
+        referralText: inputReferral.value.trim(),
+        selectedType: outreachState.type
+      };
+
+      const newId = "draft_" + Date.now();
+      const newDraft = {
+        id: newId,
+        subject: subj,
+        body: bdy,
+        ...currentInputs,
+        timestamp: Date.now()
+      };
+      drafts.unshift(newDraft);
+      saveSavedDrafts(drafts);
+      activeDraftId = newId;
+
+      updateSavedDraftsCount();
+      if (txtSaveDraft) txtSaveDraft.textContent = "Saved!";
+      setTimeout(() => {
+        if (txtSaveDraft) txtSaveDraft.textContent = "Update Draft";
+      }, 2000);
+    }
+
+    function loadDraft(draft) {
+      draftSubject.textContent = draft.subject;
+      draftBody.innerHTML = draft.body.replace(/\n/g, "<br>");
+      
+      // Refill all target inputs
+      inputCompany.value = draft.company || "";
+      if (inputCompany.value) inputCompany.classList.add("has-content");
+      inputDesc.value = draft.description || "";
+      if (inputDesc.value) inputDesc.classList.add("has-content");
+      inputRole.value = draft.role || "";
+      if (inputRole.value) inputRole.classList.add("has-content");
+      inputStrength.value = draft.strength || "";
+      if (inputStrength.value) inputStrength.classList.add("has-content");
+      
+      outreachState.tone = draft.tone || "confident";
+      toneBtns.forEach(btn => {
+        if (btn.getAttribute("data-tone") === outreachState.tone) {
+          btn.classList.add("active");
+        } else {
+          btn.classList.remove("active");
+        }
+      });
+
+      outreachState.hasReferral = !!draft.hasReferral;
+      toggleReferral.checked = outreachState.hasReferral;
+      if (outreachState.hasReferral) {
+        referralContainer.style.display = "block";
+        inputReferral.value = draft.referralText || "";
+        if (inputReferral.value) inputReferral.classList.add("has-content");
+      } else {
+        referralContainer.style.display = "none";
+        inputReferral.value = "";
+      }
+
+      outreachState.type = draft.selectedType || "internship";
+      pills.forEach(p => {
+        if (p.getAttribute("data-type") === outreachState.type) {
+          p.classList.add("active");
+        } else {
+          p.classList.remove("active");
+        }
+      });
+
+      // Update words display
+      const wordsCount = draft.body.trim().split(/\s+/).length;
+      displayWords.textContent = `${wordsCount} words | ~1 min read`;
+      displayWords.classList.add("visible");
+
+      // Show output block, hide placeholder
+      placeholderView.style.display = "none";
+      outputView.style.display = "block";
+      savedView.style.display = "none";
+
+      activeDraftId = draft.id;
+      if (btnSaveAsNew) btnSaveAsNew.style.display = "inline-flex";
+      if (txtSaveDraft) txtSaveDraft.textContent = "Update Draft";
+      
+      // Enable editing
+      draftSubject.contentEditable = "true";
+      draftBody.contentEditable = "true";
+
+      switchToTab("editor");
+    }
+
+    function deleteDraft(id) {
+      const drafts = getSavedDrafts().filter(d => d.id !== id);
+      saveSavedDrafts(drafts);
+      if (activeDraftId === id) {
+        activeDraftId = null;
+        if (btnSaveAsNew) btnSaveAsNew.style.display = "none";
+        if (txtSaveDraft) txtSaveDraft.textContent = "Save Draft";
+      }
+      updateSavedDraftsCount();
+      renderSavedDraftsList();
+    }
+
+    // Attach listeners
+    if (btnSaveDraft) btnSaveDraft.addEventListener("click", saveCurrentDraft);
+    if (btnSaveAsNew) btnSaveAsNew.addEventListener("click", saveCurrentAsNew);
+
+    // Initial sync
+    updateSavedDraftsCount();
+
+    // Listen to changes from React or other tab/window
+    window.addEventListener("storage", updateSavedDraftsCount);
+
+    // === AUTO-SAVE FOR STUDENT PAGE ===
+    let autosaveTimer = null;
+    const autosaveIndicator = document.getElementById("autosave-indicator");
+
+    function triggerAutosave() {
+      // Don't auto-save if we are currently generating, or if there's no text at all
+      if (outreachState.isGenerating) return;
+      const subj = draftSubject.textContent.trim();
+      const bdy = draftBody.innerText.trim();
+      if (!subj && !bdy) return;
+
+      if (autosaveTimer) clearTimeout(autosaveTimer);
+
+      autosaveTimer = setTimeout(() => {
+        const timestamp = Date.now();
+        const date = new Date(timestamp);
+        const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+        const autosaveData = {
+          subject: draftSubject.textContent,
+          body: draftBody.innerText,
+          activeDraftId: activeDraftId,
+          selectedType: outreachState.type,
+          timestamp: timestamp,
+          inputs: {
+            company: inputCompany.value.trim(),
+            description: inputDesc.value.trim(),
+            role: inputRole.value.trim(),
+            strength: inputStrength.value.trim(),
+            tone: outreachState.tone,
+            hasReferral: outreachState.hasReferral,
+            referralText: inputReferral.value.trim()
+          }
+        };
+
+        try {
+          localStorage.setItem("twin_autosave_draft", JSON.stringify(autosaveData));
+          if (autosaveIndicator) {
+            autosaveIndicator.textContent = `• Auto-saved ${timeStr}`;
+            autosaveIndicator.style.opacity = "1";
+          }
+
+          // If editing an existing draft, update it in the main drafts list as well
+          if (activeDraftId) {
+            const drafts = getSavedDrafts();
+            const updated = drafts.map(draft => {
+              if (draft.id === activeDraftId) {
+                return {
+                  ...draft,
+                  subject: draftSubject.textContent,
+                  body: draftBody.innerText,
+                  company: inputCompany.value.trim(),
+                  description: inputDesc.value.trim(),
+                  role: inputRole.value.trim(),
+                  strength: inputStrength.value.trim(),
+                  tone: outreachState.tone,
+                  hasReferral: outreachState.hasReferral,
+                  referralText: inputReferral.value.trim(),
+                  selectedType: outreachState.type,
+                  timestamp: timestamp
+                };
+              }
+              return draft;
+            });
+            saveSavedDrafts(updated);
+            updateSavedDraftsCount();
+          }
+        } catch (e) {
+          console.error("Auto-save failed", e);
+        }
+      }, 1500); // 1.5s debounce
+    }
+
+    // Attach input listeners
+    if (draftSubject) {
+      draftSubject.addEventListener("input", triggerAutosave);
+      draftSubject.addEventListener("blur", triggerAutosave);
+    }
+    if (draftBody) {
+      draftBody.addEventListener("input", triggerAutosave);
+      draftBody.addEventListener("blur", triggerAutosave);
+    }
+
+    // On page load, check if there is an auto-saved draft
+    function loadAutosavedDraftOnMount() {
+      try {
+        const saved = localStorage.getItem("twin_autosave_draft");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed && (parsed.subject || parsed.body)) {
+            draftSubject.textContent = parsed.subject || "";
+            draftBody.innerHTML = (parsed.body || "").replace(/\n/g, "<br>");
+            
+            if (parsed.inputs) {
+              inputCompany.value = parsed.inputs.company || "";
+              if (inputCompany.value) inputCompany.classList.add("has-content");
+              inputDesc.value = parsed.inputs.description || "";
+              if (inputDesc.value) inputDesc.classList.add("has-content");
+              inputRole.value = parsed.inputs.role || "";
+              if (inputRole.value) inputRole.classList.add("has-content");
+              inputStrength.value = parsed.inputs.strength || "";
+              if (inputStrength.value) inputStrength.classList.add("has-content");
+              
+              outreachState.tone = parsed.inputs.tone || "confident";
+              toneBtns.forEach(btn => {
+                if (btn.getAttribute("data-tone") === outreachState.tone) {
+                  btn.classList.add("active");
+                } else {
+                  btn.classList.remove("active");
+                }
+              });
+
+              outreachState.hasReferral = !!parsed.inputs.hasReferral;
+              toggleReferral.checked = outreachState.hasReferral;
+              if (outreachState.hasReferral) {
+                referralContainer.style.display = "block";
+                inputReferral.value = parsed.inputs.referralText || "";
+                if (inputReferral.value) inputReferral.classList.add("has-content");
+              } else {
+                referralContainer.style.display = "none";
+                inputReferral.value = "";
+              }
+            }
+
+            if (parsed.selectedType) {
+              outreachState.type = parsed.selectedType;
+              pills.forEach(p => {
+                if (p.getAttribute("data-type") === outreachState.type) {
+                  p.classList.add("active");
+                } else {
+                  p.classList.remove("active");
+                }
+              });
+            }
+
+            // Update words display
+            const wordsCount = (parsed.body || "").trim().split(/\s+/).length;
+            displayWords.textContent = `${wordsCount} words | ~1 min read`;
+            displayWords.classList.add("visible");
+
+            // Show output block, hide placeholder
+            placeholderView.style.display = "none";
+            outputView.style.display = "block";
+            savedView.style.display = "none";
+
+            if (parsed.activeDraftId) {
+              activeDraftId = parsed.activeDraftId;
+              if (btnSaveAsNew) btnSaveAsNew.style.display = "inline-flex";
+              if (txtSaveDraft) txtSaveDraft.textContent = "Update Draft";
+            }
+            
+            draftSubject.contentEditable = "true";
+            draftBody.contentEditable = "true";
+
+            if (parsed.timestamp) {
+              const date = new Date(parsed.timestamp);
+              const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+              if (autosaveIndicator) {
+                autosaveIndicator.textContent = `• Auto-saved ${timeStr}`;
+                autosaveIndicator.style.opacity = "1";
+              }
+            }
+          }
+        }
+      } catch (e) {
+        console.error("Failed to load autosaved draft on mount", e);
+      }
+    }
+
+    // Initial load check on mount
+    loadAutosavedDraftOnMount();
+
+    // Initial run
+    updateLabelsAndPlaceholders();
+
+    initWordFragments();
+  </script>
+</body>
+</html>
